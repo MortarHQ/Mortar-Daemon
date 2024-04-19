@@ -104,3 +104,7 @@ const port = config.get<String>("serverPort");
 server.listen(port, () => {
   console.log(`服务器已启动，正在监听 ${port} 端口...`);
 });
+
+process.on("uncaughtException", (err) => {
+  log.error(`Uncaught Exception: ${err.message}`);
+});
