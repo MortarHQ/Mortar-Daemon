@@ -89,28 +89,24 @@ function createFakeServerPacket(
       },
       "favicon": "${getBase64Image()}",
       "enforcesSecureChat": true,
-      "description": [
-          {
-              "text":"Mortar",
-              "bold":true,
-              "color":"aqua"
-          },{
-              "text":" 全服在线人数统计",
-              "bold":true,
-              "color":"gold"
-          },{
-              "text":"这是你永远也不能到达的境地……",
-              "italic":true,
-              "underlined":true,
-              "color":"gray"
-          }
-      ],
+      "description": [],
       "players": {
           "max": ${sample.length + 1},
           "online": ${sample.length},
           "sample": ${JSON.stringify(sample)}
       }
-  }`);
+    }`) as ServerListPingFeed;
+    res.description = [
+      "",
+      { text: "Mortar", bold: true, color: "aqua" },
+      { text: " 全服在线人数统计", bold: true, color: "gold" },
+      {
+        text: "\n这是你永远也不能到达的境地……",
+        italic: true,
+        underlined: true,
+        color: "gray",
+      },
+    ];
 
     const buffer = createServerListPingPacket(Buffer.from(JSON.stringify(res)));
     resolve(buffer);
