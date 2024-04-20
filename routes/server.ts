@@ -1,3 +1,4 @@
+import log from "@utils/logger";
 import {
   type versionMap,
   getServerListPing,
@@ -51,17 +52,16 @@ router.get(server, function (req, res, next) {
   for (let cache of getCacheList) {
     promises.push(cache());
   }
-  Promise.all(promises)
-    .then((data) => {
-      const dataArray: Object[] = [];
-      data.forEach((item) => {
-        dataArray.push(item as Object);
-      });
-      res.send(dataArray);
-    })
-    .catch((err) => {
-      res.send(err);
-    });
+  const dataArray: Object[] = [];
+  promises.forEach(async (promise) => {
+    const data = (await promise
+      .then((data) => data)
+      .catch((err) => {
+        log.error(err);
+        return {};
+      })) as Object;
+    dataArray.push(data);
+  });
 });
 
 export default router;
