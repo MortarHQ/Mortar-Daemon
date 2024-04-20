@@ -91,7 +91,7 @@ function createFakeServerPacket(
       "enforcesSecureChat": true,
       "description": [],
       "players": {
-          "max": ${sample.length + 1},
+          "max": ${sample.length},
           "online": ${sample.length},
           "sample": ${JSON.stringify(sample)}
       }
