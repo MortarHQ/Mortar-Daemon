@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>controller</title>
+    <!-- Import style -->
+    <link rel="stylesheet" href="//unpkg.com/element-plus/dist/index.css" />
+    <link rel="stylesheet" href="./style.css" />
+    <!-- Import Vue 3 -->
+    <script src="//unpkg.com/vue@3"></script>
+    <!-- Import component library -->
+    <script src="//unpkg.com/element-plus"></script>
+  </head>
+  <body>
+    <div id="app">
+      <el-container class="app-container">
+        <el-header>
+          <h1>web控制台</h1>
+        </el-header>
+        <el-container>
+          <el-aside width="auto">
+            <el-scrollbar>
+              <el-container class="aside">
+                <div>
+                  <el-button plain type="primary" @click="submit">
+                    提交偏移
+                  </el-button>
+                </div>
+                <div>
+                  <el-button plain type="info" @click="reset">
+                    重置偏移
+                  </el-button>
+                </div>
+
+                <el-footer>aside footer</el-footer>
+              </el-container>
+            </el-scrollbar>
+          </el-aside>
+          <el-main>
+            <el-scrollbar>
+              <div class="json-area">
+                <div class="offset" contenteditable="true" ref="offsetRef">
+                  {{ computedProps.lspOffset }}
+                </div>
+                <div class="list">{{ computedProps.serverList }}</div>
+              </div>
+              <el-footer>footer</el-footer>
+            </el-scrollbar>
+          </el-main>
+        </el-container>
+      </el-container>
+    </div>
+
+    <script>
+      const { reactive, createApp, computed, ref } = Vue;
+      const { ElMessage } = ElementPlus;
+
+      const api = {
+        serverList: "./serverlist",
+        lspOffset: "./lspoffset",
+      };
+      const cache = {};
+
+      const app = createApp({
+        setup() {
+          /* TODO */
+          const props = reactive({
+            lspOffset: {},
+            serverList: {},
+          });
+          const computedProps = computed(() => {
+            return {
+              lspOffset: JSON.stringify(props.lspOffset, null, 2),
+              serverList: JSON.stringify(props.serverList, null, 2),
+            };
+          });
+          const offsetRef = ref();
+          // 首次更新
+          updateDate();
+
+          /* 各类函数 */
+          async function submit() {
+            /* 更新offset */
+            try {
+              props.lspOffset = JSON.parse(offsetRef.value.innerText);
+            } catch (error) {
+              // json解析出错
+              ElMessage.error("不符合json文本！");
+              return;
+            }
+            /* 检测offset有无更新 */
+            if (
+              JSON.stringify(cache.lspOffset, null) ===
+              JSON.stringify(props.lspOffset, null)
+            ) {
+              ElMessage.error("没有发生变化");
+              return;
+            }
+            const origin = await fetch(api.lspOffset, {
+              method: "put",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(props.lspOffset),
+            })
+              .then((data) => {
+                ElMessage.success(`提交成功！ status:${data.status}`);
+                updateDate();
+              })
+              .catch((error) => {
+                console.error(error);
+                return {};
+              });
+          }
+
+          // 更新数据
+          async function updateDate() {
+            await fetch(api.lspOffset)
+              .then((data) => data.json())
+              .then((res) => {
+                props.lspOffset = res;
+              })
+              .catch((error) => {
+                console.error(error);
+                props.lspOffset = {};
+              })
+              .finally(() => {
+                cache.lspOffset = props.lspOffset;
+              });
+
+            fetch(api.serverList)
+              .then((data) => data.json())
+              .then((res) => {
+                props.serverList = res;
+              })
+              .catch((error) => {
+                console.error(error);
+                props.serverList = {};
+              })
+              .finally(() => {
+                cache.serverList = props.serverList;
+              });
+          }
+
+          function reset() {
+            props.lspOffset = {};
+            setTimeout(() => {
+              props.lspOffset = cache.lspOffset;
+              ElMessage.success("成功");
+            }, 100);
+          }
+
+          /* 暴露内容 */
+          return {
+            props,
+            computedProps,
+            offsetRef,
+            submit,
+            reset,
+          };
+        },
+      });
+
+      app.use(ElementPlus);
+      app.mount("#app");
+    </script>
+  </body>
+</html>

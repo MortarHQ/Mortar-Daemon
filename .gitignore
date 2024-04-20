@@ -62,3 +62,4 @@ typings/
 
 # test.ts generation
 test.json
+demo.ts

@@ -2,8 +2,9 @@ import {
   type versionMap,
   getServerListPing,
   getServerListPingWithCache,
-} from "@utils/serverListPing";
+} from "@utils/serverListPingAPI";
 import express from "express";
+const server = "/server";
 
 const serverList: {
   host: string;
@@ -45,7 +46,7 @@ serverList.forEach((server) => {
 
 const router = express.Router();
 /* GET users listing. */
-router.get("/server", function (req, res, next) {
+router.get(server, function (req, res, next) {
   const promises = [];
   for (let cache of getCacheList) {
     promises.push(cache());
@@ -64,3 +65,4 @@ router.get("/server", function (req, res, next) {
 });
 
 export default router;
+export { server as SERVER };

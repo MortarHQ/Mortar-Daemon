@@ -1,4 +1,4 @@
-import { createFakeServerPacket, decodePacketID } from "@utils/serverListPing";
+import { createFakeServerPacket, decodePacketID } from "@utils/serverListPingAPI";
 import net from "net";
 import config from "config";
 import log from "@utils/logger";
