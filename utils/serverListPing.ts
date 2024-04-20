@@ -4,6 +4,7 @@ import log from "@utils/logger";
 import varint from "varint";
 import { off } from "process";
 import { resolve } from "path";
+import config from "config";
 
 const versionMap = {
   "1.20.4": 765,
@@ -33,6 +34,82 @@ type ServerListPingFeed = {
     }[];
   };
 };
+
+function decodePacketID(data: Buffer) {
+  const length = readVarInt(data, 0);
+  const packetID = readVarInt(data, length.offset);
+  return { length, packetID };
+}
+
+function createFakeServerPacket(clientData: Buffer): Promise<Buffer> {
+  return new Promise(async (resolve, reject) => {
+    // 解析客户端传来的消息
+    const { length, packetID } = decodePacketID(clientData);
+    const protocolVersion = readVarInt(clientData, packetID.offset);
+    const addressLength = clientData.lastIndexOf(99);
+    const address = clientData.toString(
+      "utf-8",
+      protocolVersion.offset + 1,
+      addressLength
+    );
+    const port = clientData.readUInt16BE(addressLength);
+    const state = clientData[addressLength + 2];
+
+    // 读取Mortar Server列表
+    const uri = `http://${config.get("host")}:${config.get("port")}/server`;
+    const serverList = await fetch(uri)
+      .then((response) => response.json())
+      .then((data) => data)
+      .catch((error) => {
+        log.error(error);
+        return [];
+      });
+    // 解析玩家
+    const sample: { name: String; id: String }[] = [];
+    for (let server of serverList) {
+      if (server && server.players && server.players.sample) {
+        server.players.sample.forEach((player: (typeof sample)[0]) => {
+          player.name = `${player.name} -- ${server.version.name}`;
+          sample.push(player);
+        });
+      }
+    }
+    // 构造服务列表信息
+    const res = JSON.parse(`{
+      "version": {
+          "name": "mortar",
+          "protocol": ${protocolVersion.value}
+      },
+      "favicon": "${getBase64Image()}",
+      "enforcesSecureChat": true,
+      "description": [
+          {
+              "text":"Mortar",
+              "bold":true,
+              "color":"aqua"
+          },{
+              "text":" 全服在线人数统计",
+              "bold":true,
+              "color":"gold"
+          },{
+              "text":"这是你永远也不能到达的境地……",
+              "italic":true,
+              "underlined":true,
+              "color":"gray"
+          }
+      ],
+      "players": {
+          "max": ${sample.length + 1},
+          "online": ${sample.length},
+          "sample": ${JSON.stringify(sample)}
+      }
+  }`);
+
+    const buffer = createServerListPingPacket(Buffer.from(JSON.stringify(res)));
+    resolve(buffer);
+    return;
+  });
+}
 
 function getServerListPingWithCache(
   host: string,
@@ -220,10 +297,12 @@ function getBase64Image() {
 }
 
 export {
+  decodePacketID,
   parseServerListPingPacket,
   getServerListPingWithCache,
   getServerListPing,
   getBase64Image,
+  createFakeServerPacket,
   createServerListPingPacket,
   createHandshakePacket,
   createStatusRequestPacket,
