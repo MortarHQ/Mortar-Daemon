@@ -68,7 +68,7 @@ function createFakeServerPacket(
     // 读取Mortar Server List列表
     const uri = `http://${config.get("host")}:${config.get(
       "port"
-    )}${SERVERLIST}`;
+    )}${SERVERLIST}?protocolVersion=${protocolVersion.value}`;
     const requestInit = {
       headers: {
         "X-Forwarded-For": socket.remoteAddress,
@@ -242,17 +242,22 @@ function createPacket(data: Buffer): Buffer {
   return res;
 }
 
+function version2Protocol(versionString: keyof typeof versionMap) {
+  if (versionString in versionMap) {
+    return versionMap[versionString];
+  } else {
+    log.warn(`不支持${versionString}，已自动替换成1.16.5`);
+    return versionMap["1.16.5"];
+  }
+}
+
 /**
- * 将版本转换到VarInt字节码
+ * 将版本协议号转换到VarInt字节码
  * @param versionString
  * @returns
  */
 function encodeProtocolVersion(versionString: keyof typeof versionMap): Buffer {
-  let version = versionMap[versionString];
-  if (version === undefined) {
-    throw new Error("Unsupported version string");
-  }
-
+  let version = version2Protocol(versionString);
   return Buffer.from(varint.encode(version));
 }
 
@@ -288,6 +293,7 @@ export {
   createPacket,
   encodeProtocolVersion,
   readVarInt,
+  version2Protocol,
 };
 
 export type { versionMap, ServerListPingFeed };

@@ -4,7 +4,7 @@ import log from "@utils/logger";
 import {
   ServerListPingFeed,
   getBase64Image,
-  versionMap,
+  version2Protocol,
 } from "@utils/serverListPingAPI";
 import { LSPOFFSET } from "./lspOffset";
 import { SERVER } from "./server";
@@ -18,8 +18,8 @@ const addr = `http://${host}:${port}`;
 const router = express.Router();
 router.get(SERVERLIST, async (req, res, next) => {
   // 检查query是否拥有protocolVersion
-  let protocolVersion = req.query.protocolVersion as keyof typeof versionMap;
-  if (!protocolVersion) protocolVersion = "1.16.5";
+  let protocolVersion = parseInt(req.query.protocolVersion as string);
+  if (!protocolVersion) protocolVersion = version2Protocol("1.16.5");
 
   // 获取server
   const allServer: ServerListPingFeed[] = await fetch(`${addr}${SERVER}`, {
@@ -48,7 +48,7 @@ router.get(SERVERLIST, async (req, res, next) => {
   const originInfo = JSON.parse(`{
     "version": {
         "name": "mortar",
-        "protocol": "${protocolVersion}"
+        "protocol": ${protocolVersion}
     },
     "favicon": "${getBase64Image()}",
     "enforcesSecureChat": true,
@@ -83,7 +83,7 @@ router.get(SERVERLIST, async (req, res, next) => {
     });
   // 合并结果
   const resInfo = {};
-  Object.assign(resInfo, serverListOffset, originInfo);
+  Object.assign(resInfo, originInfo, serverListOffset);
   res.send(resInfo);
 });
 
