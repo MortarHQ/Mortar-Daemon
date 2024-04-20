@@ -36,7 +36,13 @@ router.get(SERVERLIST, async (req, res, next) => {
   // 解析玩家
   const sample: { name: String; id: String }[] = [];
   for (let server of allServer) {
-    if (server && server.players && server.players.sample) {
+    if (
+      server &&
+      server.players &&
+      server.players.sample &&
+      server.version &&
+      server.version.name
+    ) {
       server.players.sample.forEach((player: (typeof sample)[0]) => {
         player.name = `${player.name} -- ${server.version.name}`;
         sample.push(player);
@@ -84,6 +90,7 @@ router.get(SERVERLIST, async (req, res, next) => {
   // 合并结果
   const resInfo = {};
   Object.assign(resInfo, originInfo, serverListOffset);
+  console.log(resInfo);
   res.send(resInfo);
 });
 

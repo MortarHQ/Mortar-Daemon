@@ -47,13 +47,13 @@ serverList.forEach((server) => {
 
 const router = express.Router();
 /* GET users listing. */
-router.get(server, function (req, res, next) {
+router.get(server, async function (req, res, next) {
   const promises = [];
   for (let cache of getCacheList) {
     promises.push(cache());
   }
   const dataArray: Object[] = [];
-  promises.forEach(async (promise) => {
+  for (let promise of promises) {
     const data = (await promise
       .then((data) => data)
       .catch((err) => {
@@ -61,7 +61,8 @@ router.get(server, function (req, res, next) {
         return {};
       })) as Object;
     dataArray.push(data);
-  });
+  }
+  res.send(dataArray);
 });
 
 export default router;
