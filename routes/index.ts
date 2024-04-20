@@ -1,14 +1,10 @@
 import express from "express";
-import serverRoute from "./server";
+import serverRouter from "./server";
+import lspOffsetRouter, { LSPOFFSET } from "./lspOffset";
 
 const router = express.Router();
 
-router.get("/", (req, res) => {
-  res.render("index", {
-    title: "Mortar EJS",
-    serverData: "hello world",
-  });
-});
-router.use(serverRoute);
+router.use(lspOffsetRouter);
+router.use(serverRouter);
 
 export default router;
