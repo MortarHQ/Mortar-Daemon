@@ -1,4 +1,4 @@
-import net from "net";
+import net, { Socket } from "net";
 import { Buffer } from "buffer";
 import log from "@utils/logger";
 import varint from "varint";
@@ -39,7 +39,10 @@ function decodePacketID(data: Buffer) {
   return { length, packetID };
 }
 
-function createFakeServerPacket(clientData: Buffer): Promise<Buffer> {
+function createFakeServerPacket(
+  socket: Socket,
+  clientData: Buffer
+): Promise<Buffer> {
   return new Promise(async (resolve, reject) => {
     // 解析客户端传来的消息
     const { length, packetID } = decodePacketID(clientData);
@@ -55,10 +58,16 @@ function createFakeServerPacket(clientData: Buffer): Promise<Buffer> {
 
     // 读取Mortar Server列表
     const uri = `http://${config.get("host")}:${config.get("port")}/server`;
-    const serverList = await fetch(uri)
+    const requestInit = {
+      headers: {
+        "X-Forwarded-For": address,
+      },
+    } as RequestInit;
+    const serverList = await fetch(uri, requestInit)
       .then((response) => response.json())
       .then((data) => data)
       .catch((error) => {
+        log.error(import.meta.filename);
         log.error(error);
         return [];
       });
@@ -187,12 +196,10 @@ function getServerListPing(
 }
 
 function createServerListPingPacket(jsonBuffer: Buffer) {
-  const varInt2 = Buffer.from(varint.encode(0));
-  const varInt3 = Buffer.from(varint.encode(jsonBuffer.length));
-  const buffer = Buffer.concat([varInt2, varInt3, jsonBuffer]);
-
-  const varInt1 = Buffer.from(varint.encode(buffer.length));
-  return Buffer.concat([varInt1, buffer]);
+  const jsonPacket = createPacket(jsonBuffer);
+  const varInt = Buffer.from(varint.encode(0));
+  const buffer = Buffer.concat([varInt, jsonPacket]);
+  return createPacket(buffer);
 }
 
 function parseServerListPingPacket(
@@ -257,8 +264,9 @@ function createStatusRequestPacket(): Buffer {
 }
 
 function createPacket(data: Buffer): Buffer {
-  const length = Buffer.from([data.length]);
-  return Buffer.concat([length, data]);
+  const length = Buffer.from(varint.encode(data.length));
+  const res = Buffer.concat([length, data]);
+  return res;
 }
 
 /**

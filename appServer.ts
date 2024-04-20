@@ -1,16 +1,10 @@
-import {
-  createFakeServerPacket,
-  createServerListPingPacket,
-  decodePacketID,
-  getBase64Image,
-  parseServerListPingPacket,
-  readVarInt,
-} from "@utils/serverListPing";
+import { createFakeServerPacket, decodePacketID } from "@utils/serverListPing";
 import net from "net";
 import config from "config";
 import log from "@utils/logger";
 
 // 创建 TCP 服务器
+log.info("Starting server...");
 const server = net.createServer();
 
 server.on("connection", (socket) => {
@@ -35,7 +29,10 @@ server.on("connection", (socket) => {
         break;
       }
       case packetID.value === 0x00: {
-        const packet = await createFakeServerPacket(data).then((res) => res);
+        const packet = await createFakeServerPacket(socket, data).then(
+          (res) => res
+        );
+        console.log("33", packet);
         socket.write(packet);
         break;
       }
@@ -50,7 +47,7 @@ server.on("connection", (socket) => {
 // 监听 25565 端口
 const port = config.get<String>("serverPort");
 server.listen(port, () => {
-  console.log(`服务器已启动，正在监听 ${port} 端口...`);
+  log.info(`服务器已启动，正在监听 ${port} 端口...`);
 });
 
 process.on("uncaughtException", (err) => {
