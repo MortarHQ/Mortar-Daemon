@@ -56,7 +56,7 @@ function createFakeServerPacket(
     const port = clientData.readUInt16BE(addressLength);
     const state = clientData[addressLength + 2];
 
-    // 读取Mortar Server列表
+    // 读取Mortar Server List列表
     const uri = `http://${config.get("host")}:${config.get("port")}/server`;
     const requestInit = {
       headers: {
