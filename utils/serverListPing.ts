@@ -2,8 +2,6 @@ import net from "net";
 import { Buffer } from "buffer";
 import log from "@utils/logger";
 import varint from "varint";
-import { off } from "process";
-import { resolve } from "path";
 import config from "config";
 
 const versionMap = {
