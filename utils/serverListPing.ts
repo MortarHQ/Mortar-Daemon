@@ -60,7 +60,7 @@ function createFakeServerPacket(
     const uri = `http://${config.get("host")}:${config.get("port")}/server`;
     const requestInit = {
       headers: {
-        "X-Forwarded-For": address,
+        "X-Forwarded-For": socket.remoteAddress,
       },
     } as RequestInit;
     const serverList = await fetch(uri, requestInit)
@@ -210,7 +210,7 @@ function parseServerListPingPacket(
   const varInt1 = readVarInt(packet, 0); // 尝试读取VarInt
   const varInt2 = readVarInt(packet, varInt1.offset); // 尝试读取VarInt
   const varInt3 = readVarInt(packet, varInt2.offset); // 尝试读取VarInt
-  console.table({
+  console.debug({
     title: { value: `${serverAddress}:${serverPort}` },
     varInt1,
     varInt2,

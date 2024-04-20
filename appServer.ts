@@ -8,6 +8,7 @@ log.info("Starting server...");
 const server = net.createServer();
 
 server.on("connection", (socket) => {
+  log.info(`New connection from ${socket.remoteAddress}:${socket.remotePort}`);
   socket.on("data", async (data) => {
     if (data[0] === 0xfe) {
       //TODO version <=1.6
@@ -32,7 +33,6 @@ server.on("connection", (socket) => {
         const packet = await createFakeServerPacket(socket, data).then(
           (res) => res
         );
-        console.log("33", packet);
         socket.write(packet);
         break;
       }
