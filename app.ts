@@ -10,6 +10,9 @@ const __dirname = import.meta.dirname;
 
 const app = express();
 
+app.set("views", path.join(__dirname, "views"));
+app.set("view engine", "ejs");
+
 app.use(morgan(config.get<string>("logFormat")));
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));

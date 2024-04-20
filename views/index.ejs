@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title><%= title %></title>
+  </head>
+  <body>
+    <h1>Welcome to <%= title %></h1>
+    <p>This is a dynamic page rendered by EJS.</p>
+
+    <!-- 显示从服务器传递的数据 -->
+    <p>Data from server: <%= serverData %></p>
+
+    <!-- 提供一个按钮，用于向服务器发起请求 -->
+    <button id="requestData">Request Data from Server</button>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+      $(document).ready(function () {
+        $("#requestData").click(function () {
+          $.ajax({
+            url: "/your-endpoint", // 服务器端点URL
+            type: "GET", // 请求类型
+            success: function (response) {
+              // 处理响应
+              alert("Server response: " + response);
+            },
+            error: function (error) {
+              // 处理错误
+              alert("Error: " + error);
+            },
+          });
+        });
+      });
+    </script>
+  </body>
+</html>

@@ -3,11 +3,12 @@ import serverRoute from "./server";
 
 const router = express.Router();
 
-/* GET home page. */
-router.get("/", function (req, res, next) {
-  res.send("Hello World!");
+router.get("/", (req, res) => {
+  res.render("index", {
+    title: "Mortar EJS",
+    serverData: "hello world",
+  });
 });
-
 router.use(serverRoute);
 
 export default router;
