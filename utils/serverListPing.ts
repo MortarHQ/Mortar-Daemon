@@ -131,7 +131,7 @@ function getServerListPingWithCache(
     return new Promise((resolve, reject) => {
       // 缓存未过期
       if (lastBuffData.time + 60 * 1000 > Date.now()) {
-        log.info(`${host}:${port} 缓存未过期`);
+        log.debug(`${host}:${port} 缓存未过期`);
         resolve(lastBuffData.data);
         return;
       }
@@ -210,7 +210,7 @@ function parseServerListPingPacket(
   const varInt1 = readVarInt(packet, 0); // 尝试读取VarInt
   const varInt2 = readVarInt(packet, varInt1.offset); // 尝试读取VarInt
   const varInt3 = readVarInt(packet, varInt2.offset); // 尝试读取VarInt
-  console.debug({
+  log.debug({
     title: { value: `${serverAddress}:${serverPort}` },
     varInt1,
     varInt2,
