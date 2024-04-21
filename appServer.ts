@@ -1,4 +1,7 @@
-import { createFakeServerPacket, decodePacketID } from "@utils/serverListPingAPI";
+import {
+  createFakeServerPacket,
+  decodePacketID,
+} from "@utils/serverListPingAPI";
 import net from "net";
 import config from "config";
 import log from "@utils/logger";
@@ -12,24 +15,34 @@ server.on("connection", (socket) => {
   socket.on("data", async (data) => {
     if (data[0] === 0xfe) {
       //TODO version <=1.6
-      return;
-    } else if (data.length === 2) {
-      // 不响应pong
+      // 暂不响应
+      socket.destroy();
       return;
     }
-    // 解析包
+
+    // 解析接收到的包
     const { length, packetID } = decodePacketID(data);
     switch (true) {
+      /* Ping Request */
       case packetID.value === 0x01: {
+        /* Pong Response */
         log.info(
           `Pong from ${socket.remoteAddress}:${
             socket.remotePort
           } => ${data.toString("hex")}`
         );
         socket.write(data);
+        socket.destroy();
         break;
       }
+      /* Handshake | Status Request */
       case packetID.value === 0x00: {
+        /* Status Request => void */
+        if (data.length === 2) {
+          // 无需回复
+          return;
+        }
+        /* Handshake => Status Response */
         const packet = await createFakeServerPacket(socket, data).then(
           (res) => res
         );
@@ -37,10 +50,11 @@ server.on("connection", (socket) => {
         break;
       }
       default: {
-        socket.end();
+        socket.destroy();
         break;
       }
     }
+    return;
   });
 });
 
