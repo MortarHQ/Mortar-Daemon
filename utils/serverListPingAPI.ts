@@ -21,7 +21,9 @@ type DeepOptional<T> = {
   [P in keyof T]?: T[P] extends object ? DeepOptional<T[P]> : T[P];
 };
 
-type ServerListPingFeed = {
+type ServerListPingResponse = {
+  previewsChat: Boolean;
+  enforcesSecureChat: Boolean;
   description: Object;
   players: {
     max: Number;
@@ -33,12 +35,34 @@ type ServerListPingFeed = {
     protocol: (typeof versionMap)[keyof typeof versionMap] | Number;
   };
   favicon: String;
-  forgeData: {
+  forgeData?: {
+    fmlNetworkVersion: Number;
+    d: String;
     chanels: {
       res: String;
       version: String;
       required: Boolean;
     }[];
+    mods: [
+      {
+        modId: String;
+        modmarker: String;
+      }
+    ];
+    truncated: true;
+  };
+  modinfo?: {
+    type: "FML";
+    modList: {
+      modid: String;
+      version: String;
+    };
+  };
+  modpackData?: {
+    projectID: Number;
+    name: String;
+    version: String;
+    isMetadata: Boolean;
   };
 };
 
@@ -97,7 +121,7 @@ function getServerListPingWithCache(
   version: keyof typeof versionMap
 ) {
   let lastBuffData = {
-    data: {} as ServerListPingFeed,
+    data: {} as ServerListPingResponse,
     time: 0,
   };
   return () => {
@@ -112,7 +136,7 @@ function getServerListPingWithCache(
       log.warn(`${host}:${port} 缓存过期`);
       getServerListPing(host, port, version)
         .then((data) => {
-          lastBuffData.data = data as ServerListPingFeed;
+          lastBuffData.data = data as ServerListPingResponse;
           lastBuffData.time = Date.now();
           resolve(lastBuffData.data);
         })
@@ -296,4 +320,4 @@ export {
   version2Protocol,
 };
 
-export type { versionMap, ServerListPingFeed };
+export type { versionMap, ServerListPingResponse as ServerListPingFeed };
