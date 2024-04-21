@@ -26,8 +26,8 @@ if not exist "%NODE_DIR%" (
     echo Node.js %NODE_VERSION% 未在当前目录找到，正在使用 PowerShell 下载...
     mkdir "%NODE_DIR%"
     cd "%NODE_DIR%"
-    powershell -command "Invoke-WebRequest -Uri https://nodejs.org/dist/%NODE_VERSION%/node-%NODE_VERSION%-win-x64.zip -OutFile node-%NODE_VERSION%-win-x64.zip"
-    powershell -command "Expand-Archive -Path node-%NODE_VERSION%-win-x64.zip -DestinationPath %NODE_UNZIP_DIR%"
+    powershell -command "Invoke-WebRequest -Uri https://nodejs.org/dist/%NODE_VERSION%/%NODE_UNZIP_DIR%.zip -OutFile %NODE_UNZIP_DIR%.zip"
+    powershell -command "Expand-Archive -Path %NODE_UNZIP_DIR%.zip -DestinationPath ."
 
     cd %NODE_UNZIP_DIR%
     cd ..
