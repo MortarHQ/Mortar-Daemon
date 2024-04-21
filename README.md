@@ -18,6 +18,32 @@ MD是一个轻量化的伪造的MineCraft服务端应用，利用LSP协议达成
 ***修改后***：
 ![server status png](public/img/ServerStatus~1.png)  
 
+## 一键安装
+
+为了简化安装过程，特别提供了一键安装脚本，适用于Windows和Linux系统。请根据您的操作系统执行相应的命令。
+
+### Windows
+
+在Windows系统中，您可以通过运行以下PowerShell命令来启动安装过程：
+
+```powershell
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/MortarHQ/Mortar-Daemon/master/docs/scripts/install.bat" -OutFile "install.bat"; .\install.bat
+```
+
+这条命令会自动从项目仓库下载安装脚本并立即执行它。
+
+### Linux
+
+在Linux系统中，您可以使用以下命令来一键安装：
+
+```bash
+curl -sL https://raw.githubusercontent.com/MortarHQ/Mortar-Daemon/master/docs/scripts/install.sh > install.sh && bash install.sh
+```
+
+这条命令会从您的项目仓库下载安装脚本并立即执行它。
+
+**注意**：出于安全考虑，运行来自互联网的脚本之前，请确保您已经审核了脚本的内容。
+
 ## 主要技术栈
 
 - **Express**: 用于构建服务器端的 Web 应用
