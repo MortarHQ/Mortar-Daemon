@@ -1,43 +1,11 @@
+import { SERVER_LIST } from "@config/minecraft";
 import { RouterName } from "@routes";
 import { Client, ServerStatus, Version } from "@utils/serverListPingAPI";
 import express from "express";
-/**
- * 服务器列表信息
- */
-const serversList: {
-  host: string;
-  port: string;
-  version: Version;
-}[] = [
-  {
-    host: "fun.mortar.top",
-    port: "24445",
-    version: "1.16.5",
-  },
-  {
-    host: "fun.mortar.top",
-    port: "24446",
-    version: "1.19.2",
-  },
-  {
-    host: "fun.mortar.top",
-    port: "24447",
-    version: "1.18.2",
-  },
-  {
-    host: "fun.mortar.top",
-    port: "25565",
-    version: "1.12.2",
-  },
-  {
-    host: "bgp.mortar.top",
-    port: "25566",
-    version: "1.20.4",
-  },
-];
 
 function initRouter(app: express.Application) {
   const SERVER = `/${RouterName.SERVER}`;
+  const serversList = SERVER_LIST;
 
   /**
    * 客户端列表请求
