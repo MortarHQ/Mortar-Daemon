@@ -4,7 +4,6 @@ import log from "@utils/logger";
 import {
   ServerStatus,
   getBase64Image,
-  getForgeData,
   version2Protocol,
 } from "@utils/serverListPingAPI";
 import { RouterName } from "@routes";
@@ -66,8 +65,7 @@ function initRouter(app: express.Application) {
         "max": ${sample.length},
         "online": ${sample.length},
         "sample": ${JSON.stringify(sample)}
-    },
-    "forgeData": ${getForgeData()}
+    }
   }`) as ServerStatus;
     originInfo.description = [
       "",
