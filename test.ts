@@ -1,4 +1,4 @@
-import { getServerListPing } from "@utils/serverListPing";
+import { Client } from "@utils/serverListPingAPI";
 import { writeFileSync } from "fs";
 import * as readline from "readline";
 
@@ -22,7 +22,7 @@ process.on("uncaughtException", (error) => {
 });
 
 function promptForServerAddress() {
-  rl.question("：", (input) => {
+  rl.question("：", async (input) => {
     switch (input.trim().toLowerCase()) {
       case "exit":
       case "quit":
@@ -34,7 +34,7 @@ function promptForServerAddress() {
         return;
       case "clear":
         console.clear();
-        promptForServerAddress();
+        next();
         return;
       default:
     }
@@ -43,23 +43,22 @@ function promptForServerAddress() {
     if (!host.trim().length) {
       console.log("请输入正确的服务器地址");
       // 异步递归
-      promptForServerAddress();
+      next();
       return;
     }
     if (!port) port = "25565";
 
-    getServerListPing(host, port)
-      .then((data) => {
-        const filename = "test.json";
-        console.log(`已生成至 ${import.meta.dirname}/${filename}`);
-        writeFileSync(filename, JSON.stringify(data, null, 2));
-      })
-      .catch((error) => {
-        console.error("获取服务器信息时发生错误：", error);
-      })
-      .finally(() => {
-        // 异步递归
-        promptForServerAddress();
-      });
+    const client = new Client(host, port, "1.16.5");
+    const request = client.getServerListPingWithCache();
+    const res = await request().then((res) => res);
+    writeFileSync("test.json", JSON.stringify(res, null, 2));
+    console.log("已写入到 ./test.json 中");
+    next();
   });
+}
+
+function next() {
+  setTimeout(() => {
+    promptForServerAddress();
+  }, 300);
 }

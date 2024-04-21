@@ -150,6 +150,13 @@ function createFakeServerPacket(
   });
 }
 
+/**
+ * Returns a function that can be used to retrieve the server status for a given host and port, using a cache to avoid unnecessary requests.
+ * @param host The hostname or IP address of the server.
+ * @param port The port number of the server.
+ * @param version The version of the Minecraft protocol to use for the request.
+ * @returns A function that takes no arguments and returns a Promise that resolves to the server status. The function uses a cache to avoid unnecessary requests, and the cache is refreshed automatically after a period of inactivity.
+ */
 function getServerStatusWithCache(
   host: string,
   port: string,
@@ -163,12 +170,12 @@ function getServerStatusWithCache(
     return new Promise((resolve, reject) => {
       // 缓存未过期
       if (lastBuffData.time + 60 * 1000 > Date.now()) {
-        log.debug(`${host}:${port} 缓存未过期`);
+        log.debug(`${host}:${port} ${version} 缓存未过期`);
         resolve(lastBuffData.data);
         return;
       }
       // 缓存过期
-      log.warn(`${host}:${port} 缓存过期`);
+      log.warn(`${host}:${port} ${version} 缓存过期`);
       getServerStatus(host, port, version)
         .then((data) => {
           lastBuffData.data = data as ServerStatus;
@@ -189,6 +196,7 @@ function getServerStatus(
   version: keyof typeof version2ProtocolMap = "1.16.5"
 ) {
   return new Promise((resolve, reject) => {
+    log.info(`正在获取 ${serverAddress}:${serverPort} ${version} 服务器状态`);
     const client = new net.Socket();
     client.connect(parseInt(serverPort, 10), serverAddress, () => {
       // 发送握手包
