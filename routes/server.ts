@@ -1,16 +1,13 @@
-import log from "@utils/logger";
-import {
-  type versionMap,
-  getServerListPing,
-  getServerListPingWithCache,
-} from "@utils/serverListPingAPI";
+import { RouterName } from "@routes";
+import { Client, ServerStatus, Version } from "@utils/serverListPingAPI";
 import express from "express";
-const server = "/server";
-
-const serverList: {
+/**
+ * 服务器列表信息
+ */
+const serversList: {
   host: string;
   port: string;
-  version: keyof typeof versionMap;
+  version: Version;
 }[] = [
   {
     host: "fun.mortar.top",
@@ -38,32 +35,38 @@ const serverList: {
     version: "1.20.4",
   },
 ];
-const getCacheList: (() => Promise<unknown>)[] = [];
-serverList.forEach((server) => {
-  getCacheList.push(
-    getServerListPingWithCache(server.host, server.port, server.version)
-  );
-});
 
-const router = express.Router();
-/* GET users listing. */
-router.get(server, async function (req, res, next) {
-  const promises = [];
-  for (let cache of getCacheList) {
-    promises.push(cache());
-  }
-  const dataArray: Object[] = [];
-  for (let promise of promises) {
-    const data = (await promise
-      .then((data) => data)
-      .catch((err) => {
-        log.error(err);
-        return {};
-      })) as Object;
-    dataArray.push(data);
-  }
-  res.send(dataArray);
-});
+function initRouter(app: express.Application) {
+  const SERVER = `/${RouterName.SERVER}`;
 
-export default router;
-export { server as SERVER };
+  /**
+   * 客户端列表请求
+   * 向所有服务端发起Status Request的带缓存的函数
+   */
+  const clientsList: Array<() => Promise<ServerStatus>> = [];
+  serversList.forEach((server) => {
+    const client = new Client(server.host, server.port, server.version);
+    clientsList.push(client.getServerListPingWithCache());
+  });
+
+  const router = express.Router();
+  /* GET users listing. */
+  router.get(SERVER, async function (req, res, next) {
+    const promises: Promise<ServerStatus>[] = [];
+    /* 客户端发起请求 */
+    for (let request of clientsList) {
+      promises.push(request());
+    }
+    /* 等待客户端接收并处理消息 */
+    const data: ServerStatus[] = [];
+    for (let promise of promises) {
+      const res = await promise.then((res) => res);
+      data.push(res);
+    }
+    res.send(data);
+  });
+
+  app.use(router);
+}
+
+export default initRouter;

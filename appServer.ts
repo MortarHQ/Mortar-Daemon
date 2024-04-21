@@ -1,7 +1,4 @@
-import {
-  createFakeServerPacket,
-  decodePacketID,
-} from "@utils/serverListPingAPI";
+import { Server, decodePacketID } from "@utils/serverListPingAPI";
 import net from "net";
 import config from "config";
 import log from "@utils/logger";
@@ -43,9 +40,8 @@ server.on("connection", (socket) => {
           return;
         }
         /* Handshake => Status Response */
-        const packet = await createFakeServerPacket(socket, data).then(
-          (res) => res
-        );
+        const server = new Server(socket, data);
+        const packet = await server.createFakeServerPacket().then((res) => res);
         socket.write(packet);
         break;
       }
