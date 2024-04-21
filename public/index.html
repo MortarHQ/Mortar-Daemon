@@ -41,7 +41,7 @@
             <el-scrollbar>
               <div class="json-area">
                 <div class="offset" contenteditable="true" ref="offsetRef">
-                  {{ computedProps.lspOffset }}
+                  {{ computedProps.offset }}
                 </div>
                 <div class="list">{{ computedProps.serverList }}</div>
               </div>
@@ -58,7 +58,7 @@
 
       const api = {
         serverList: "./serverlist",
-        lspOffset: "./offset",
+        offset: "./offset",
       };
       const cache = {};
 
@@ -66,12 +66,12 @@
         setup() {
           /* TODO */
           const props = reactive({
-            lspOffset: {},
+            offset: {},
             serverList: {},
           });
           const computedProps = computed(() => {
             return {
-              lspOffset: JSON.stringify(props.lspOffset, null, 2),
+              offset: JSON.stringify(props.offset, null, 2),
               serverList: JSON.stringify(props.serverList, null, 2),
             };
           });
@@ -83,7 +83,7 @@
           async function submit() {
             /* 更新offset */
             try {
-              props.lspOffset = JSON.parse(offsetRef.value.innerText);
+              props.offset = JSON.parse(offsetRef.value.innerText);
             } catch (error) {
               // json解析出错
               ElMessage.error("不符合json文本！");
@@ -91,18 +91,18 @@
             }
             /* 检测offset有无更新 */
             if (
-              JSON.stringify(cache.lspOffset, null) ===
-              JSON.stringify(props.lspOffset, null)
+              JSON.stringify(cache.offset, null) ===
+              JSON.stringify(props.offset, null)
             ) {
               ElMessage.error("没有发生变化");
               return;
             }
-            const origin = await fetch(api.lspOffset, {
+            const origin = await fetch(api.offset, {
               method: "put",
               headers: {
                 "Content-Type": "application/json",
               },
-              body: JSON.stringify(props.lspOffset),
+              body: JSON.stringify(props.offset),
             })
               .then((data) => {
                 ElMessage.success(`提交成功！ status:${data.status}`);
@@ -116,17 +116,17 @@
 
           // 更新数据
           async function updateDate() {
-            await fetch(api.lspOffset)
+            await fetch(api.offset)
               .then((data) => data.json())
               .then((res) => {
-                props.lspOffset = res;
+                props.offset = res;
               })
               .catch((error) => {
                 console.error(error);
-                props.lspOffset = {};
+                props.offset = {};
               })
               .finally(() => {
-                cache.lspOffset = props.lspOffset;
+                cache.offset = props.offset;
               });
 
             fetch(api.serverList)
@@ -144,9 +144,9 @@
           }
 
           function reset() {
-            props.lspOffset = {};
+            props.offset = {};
             setTimeout(() => {
-              props.lspOffset = cache.lspOffset;
+              props.offset = cache.offset;
               ElMessage.success("成功");
             }, 100);
           }

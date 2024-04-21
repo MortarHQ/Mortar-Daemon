@@ -14,12 +14,12 @@ function initRouter(app: express.Application) {
   const offsetCache = {};
 
   router.put(OFFSET, (req, res, next) => {
-    // 清空lspOffsetCache
+    // 清空offsetCache
     Object.keys(offsetCache).forEach((key) => {
       // @ts-ignore
       delete offsetCache[key];
     });
-    // 将lspOffset缓存
+    // 将offset缓存
     Object.assign(offsetCache, req.body);
     res.sendStatus(StatusCodes.OK);
   });
