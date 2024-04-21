@@ -5,7 +5,7 @@ import varint from "varint";
 import config from "config";
 import { SERVERLIST } from "@routes/serverList";
 
-const versionMap = {
+const version2ProtocolMap = {
   "1.20.4": 765,
   "1.19.2": 760,
   "1.18.2": 758,
@@ -31,8 +31,8 @@ type ServerListPingResponse = {
     sample?: { name: String; id: String }[];
   };
   version: {
-    name: keyof typeof versionMap | String;
-    protocol: (typeof versionMap)[keyof typeof versionMap] | Number;
+    name: keyof typeof version2ProtocolMap | String;
+    protocol: (typeof version2ProtocolMap)[keyof typeof version2ProtocolMap] | Number;
   };
   favicon: String;
   forgeData?: {
@@ -118,7 +118,7 @@ function createFakeServerPacket(
 function getServerListPingWithCache(
   host: string,
   port: string,
-  version: keyof typeof versionMap
+  version: keyof typeof version2ProtocolMap
 ) {
   let lastBuffData = {
     data: {} as ServerListPingResponse,
@@ -150,7 +150,7 @@ function getServerListPingWithCache(
 function getServerListPing(
   serverAddress: string,
   serverPort: string,
-  version: keyof typeof versionMap = "1.16.5"
+  version: keyof typeof version2ProtocolMap = "1.16.5"
 ) {
   return new Promise((resolve, reject) => {
     const client = new net.Socket();
@@ -234,7 +234,7 @@ function parseServerListPingPacket(
 function createHandshakePacket(
   address: string,
   port: number,
-  version: keyof typeof versionMap
+  version: keyof typeof version2ProtocolMap
 ): Buffer {
   const packetID = Buffer.from([0x00]); // 握手的packet ID
   const protocolVersion = encodeProtocolVersion(version); // 协议版本
@@ -266,12 +266,12 @@ function createPacket(data: Buffer): Buffer {
   return res;
 }
 
-function version2Protocol(versionString: keyof typeof versionMap) {
-  if (versionString in versionMap) {
-    return versionMap[versionString];
+function version2Protocol(versionString: keyof typeof version2ProtocolMap) {
+  if (versionString in version2ProtocolMap) {
+    return version2ProtocolMap[versionString];
   } else {
     log.warn(`不支持${versionString}，已自动替换成1.16.5`);
-    return versionMap["1.16.5"];
+    return version2ProtocolMap["1.16.5"];
   }
 }
 
@@ -280,7 +280,7 @@ function version2Protocol(versionString: keyof typeof versionMap) {
  * @param versionString
  * @returns
  */
-function encodeProtocolVersion(versionString: keyof typeof versionMap): Buffer {
+function encodeProtocolVersion(versionString: keyof typeof version2ProtocolMap): Buffer {
   let version = version2Protocol(versionString);
   return Buffer.from(varint.encode(version));
 }
@@ -320,4 +320,4 @@ export {
   version2Protocol,
 };
 
-export type { versionMap, ServerListPingResponse as ServerListPingFeed };
+export type { version2ProtocolMap as versionMap, ServerListPingResponse as ServerListPingFeed };
