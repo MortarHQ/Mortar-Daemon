@@ -77,7 +77,7 @@ if [ ! -d "${NODE_DIR}" ]; then
     cd ..
     echo "Node.js ${NODE_VERSION} 安装完成。"
 else
-    echo "使用当前目录下的 Node.js ${NODE_VERSION。}"
+    echo "使用当前目录下的 Node.js ${NODE_VERSION}"
 fi
 
 if [ ! -d "${PROJECT_DIR}" ]; then
