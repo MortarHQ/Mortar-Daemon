@@ -15,30 +15,34 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+set CURRENT_DIR=%CD%
+
 set NODE_VERSION=v20.11.0
-set NODE_DIR=node_%NODE_VERSION%
+set NODE_ZIP_DIR=%CURRENT_DIR%/node_%NODE_VERSION%
+set NODE_DIR=%NODE_ZIP_DIR%/node-%NODE_VERSION%-win-x64
+
 set PROJECT_ZIP_URL=https://github.com/MortarHQ/Mortar-Daemon/archive/refs/heads/master.zip
-set PROJECT_DIR=Mortar-Daemon-master
-set NODE_UNZIP_DIR=node-%NODE_VERSION%-win-x64
+set PROJECT_DIR=%CURRENT_DIR%/Mortar-Daemon-master
+
+set PATH=%NODE_DIR%;%PATH%
+
+echo Node.js目录：%NODE_DIR%
 
 :: 检测当前目录是否拥有指定版本的 Node.js
 if not exist "%NODE_DIR%" (
     echo Node.js %NODE_VERSION% 未在当前目录找到，正在使用 PowerShell 下载...
-    mkdir "%NODE_DIR%"
-    cd "%NODE_DIR%"
-    powershell -command "Invoke-WebRequest -Uri https://nodejs.org/dist/%NODE_VERSION%/%NODE_UNZIP_DIR%.zip -OutFile %NODE_UNZIP_DIR%.zip"
-    powershell -command "Expand-Archive -Path %NODE_UNZIP_DIR%.zip -DestinationPath ."
+    cd "%CURRENT_DIR%"
+    mkdir "%NODE_ZIP_DIR%"
+    cd "%NODE_ZIP_DIR%"
+    powershell -command "Invoke-WebRequest -Uri https://nodejs.org/dist/%NODE_VERSION%/node-%NODE_VERSION%-win-x64.zip -OutFile node-%NODE_VERSION%-win-x64.zip"
+    powershell -command "Expand-Archive -Path node-%NODE_VERSION%-win-x64.zip -DestinationPath ."
 
-    cd %NODE_UNZIP_DIR%
-    cd ..
     echo Node.js %NODE_VERSION% 安装完成。
 ) else (
     echo 使用当前目录下的 Node.js %NODE_VERSION%。
 )
 
-set NODE_DIR=%CD%\%NODE_DIR%\%NODE_UNZIP_DIR%
-echo Node.js目录：%NODE_DIR%
-set PATH=%NODE_DIR%;%PATH%
+cd "%CURRENT_DIR%"
 
 if not exist "%PROJECT_DIR%" (
     echo 使用 PowerShell 下载项目文件...
