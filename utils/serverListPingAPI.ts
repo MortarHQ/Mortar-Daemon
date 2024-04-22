@@ -115,14 +115,14 @@ function createFakeServerPacket(
     // 解析客户端传来的消息
     const { length, packetID } = decodePacketID(clientData);
     const protocolVersion = readVarInt(clientData, packetID.offset);
-    const addressLength = clientData.lastIndexOf(99);
+    const addressLength = readVarInt(clientData, protocolVersion.offset);
     const address = clientData.toString(
       "utf-8",
       protocolVersion.offset + 1,
-      addressLength
+      addressLength.value
     );
-    const port = clientData.readUInt16BE(addressLength);
-    const state = clientData[addressLength + 2];
+    const port = clientData.readUInt16BE(addressLength.offset);
+    const state = clientData[addressLength.value + 2];
 
     // 读取Mortar Server List列表
     const uri = `http://${config.get("host")}:${config.get(
