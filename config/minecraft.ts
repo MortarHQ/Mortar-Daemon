@@ -9,9 +9,9 @@ const SERVER_LIST: {
   version: Version;
 }[] = [
   {
-    host: "fun.mortar.top",
-    port: "24445",
-    version: "1.16.5",
+    host: "fun.mortar.top",  //需要监听人数的服务器地址
+    port: "24445",  //需要监听人数的服务器的端口号
+    version: "1.16.5", //需要监听人数的服务器的版本
   },
   {
     host: "fun.mortar.top",
