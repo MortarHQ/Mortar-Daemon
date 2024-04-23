@@ -10,9 +10,11 @@ const __filename = import.meta.filename;
 const __dirname = import.meta.dirname;
 
 const app = express();
-
+// 中间件
 initMiddleWare(app);
-initRouter(app);
+// 路由
+app.use(await initRouter().then((router) => router));
+
 app.set("views", path.join(__dirname, "views"));
 app.set("view engine", "ejs");
 

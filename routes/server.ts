@@ -3,16 +3,15 @@ import { RouterName } from "@routes";
 import { Client, ServerStatus, Version } from "@utils/serverListPingAPI";
 import express from "express";
 
-function initRouter(app: express.Application) {
+function initRouter() {
   const SERVER = `/${RouterName.SERVER}`;
-  const serversList = SERVER_LIST;
 
   /**
    * 客户端列表请求
    * 向所有服务端发起Status Request的带缓存的函数
    */
   const clientsList: Array<() => Promise<ServerStatus>> = [];
-  serversList.forEach((server) => {
+  SERVER_LIST.forEach((server) => {
     const client = new Client(server.host, server.port, server.version);
     clientsList.push(client.getServerListPingWithCache());
   });
@@ -34,7 +33,7 @@ function initRouter(app: express.Application) {
     res.send(data);
   });
 
-  app.use(router);
+  return router;
 }
 
 export default initRouter;

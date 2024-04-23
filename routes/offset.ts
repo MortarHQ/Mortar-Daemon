@@ -3,7 +3,7 @@ import { StatusCodes } from "http-status-codes";
 import config from "config";
 import { RouterName } from "@routes";
 
-function initRouter(app: express.Application) {
+function initRouter() {
   const router = express.Router();
   const OFFSET = `/${RouterName.OFFSET}`;
 
@@ -46,7 +46,7 @@ function initRouter(app: express.Application) {
       });
   });
 
-  app.use(router);
+  return router;
 }
 
 export default initRouter;

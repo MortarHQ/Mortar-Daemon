@@ -8,7 +8,7 @@ import {
 } from "@utils/serverListPingAPI";
 import { RouterName } from "@routes";
 
-function initRouter(app: express.Application) {
+function initRouter() {
   const SERVERLIST = `/${RouterName.SERVER_LIST}`;
   const SERVER = `/${RouterName.SERVER}`;
   const OFFSET = `/${RouterName.OFFSET}`;
@@ -95,7 +95,7 @@ function initRouter(app: express.Application) {
     res.send(resInfo);
   });
 
-  app.use(router);
+  return router;
 }
 
 export default initRouter;

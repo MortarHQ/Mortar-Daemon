@@ -33,15 +33,15 @@ const routerConfigure: Array<RouterConf> = [
   },
 ];
 
-async function initRouter(app: express.Application) {
+async function initRouter() {
   const router = express.Router();
   routerConfigure.forEach(async (item) => {
     const module = (await item.router.then((module) => module)) as {
-      default: (app: express.Application) => void;
+      default: () => express.Router;
     };
-    module.default(app);
+    router.use(module.default());
   });
-  app.use(router);
+  return router;
 }
 
 export default initRouter;
