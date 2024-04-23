@@ -118,15 +118,15 @@ npm test
 
    - 现在，您可以在项目中通过 `process.env` 对象访问这些环境变量了。
 
-3. **监测服务器配置**：项目的配置文件位于 `config` 目录下的 `minecraft.ts` 中。您可以根据需要修改这些配置，以适应不同的环境和需求。
+3. **监测服务器配置**：项目的配置文件位于 `config` 目录下的 `minecraft.ts` 中。您可以根据需要修改这些配置，以监测不同的服务器人数。
 
    ```
-        PORT=8080-
-        HOST=localhost
-        LOGLEVEL=info
-        LOGFORMAT=combined
-        SERVERPORT=25565
-        ```
+        {
+    host: "fun.mortar.top",  //需要监听人数的服务器地址
+    port: "24445",  //需要监听人数的服务器的端口号
+    version: "1.16.5", //需要监听人数的服务器的版本
+  }
+  ```
 
 ## 使用方式
 
