@@ -247,12 +247,14 @@ function parseServerStatusPacket(
   const varInt1 = readVarInt(packet, 0); // 尝试读取VarInt
   const varInt2 = readVarInt(packet, varInt1.offset); // 尝试读取VarInt
   const varInt3 = readVarInt(packet, varInt2.offset); // 尝试读取VarInt
-  log.debug({
-    title: { value: `${serverAddress}:${serverPort}` },
-    varInt1,
-    varInt2,
-    varInt3,
-  });
+  log.debug(
+    JSON.stringify({
+      title: { value: `${serverAddress}:${serverPort}` },
+      varInt1,
+      varInt2,
+      varInt3,
+    })
+  );
 
   // 提取JSON数据
   const jsonBuffer = packet.slice(
