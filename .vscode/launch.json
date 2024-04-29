@@ -21,9 +21,13 @@
                 "<node_internals>/**"
             ],
             "program": "${workspaceFolder}/bin/www",
-            "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/tsx",
+            "runtimeExecutable": "${workspaceFolder}/node_modules/.bin/cross-env",
             "console": "integratedTerminal",
             "runtimeArgs": [
+                "NODE_ENV=development",
+                "tsx",
+                "watch",
+                "--clear-screen=false",
                 "-r",
                 "tsconfig-paths/register"
             ]

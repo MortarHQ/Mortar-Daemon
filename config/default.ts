@@ -11,8 +11,6 @@ if (process.env.NODE_ENV === "development") {
   config.logLevel = "debug";
   config.logFormat = "dev";
   config.serverPort = "25555";
-} else if (process.env.NODE_ENV !== "production") {
-  config.serverPort = "25555";
 }
 
 export default config;
