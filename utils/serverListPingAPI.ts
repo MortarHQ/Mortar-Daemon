@@ -198,6 +198,7 @@ function getServerStatus(
   return new Promise((resolve, reject) => {
     log.info(`正在获取 ${serverAddress}:${serverPort} ${version} 服务器状态`);
     const client = new net.Socket();
+
     client.connect(parseInt(serverPort, 10), serverAddress, () => {
       // 发送握手包
       const handshakePacket = createHandshakePacket(
@@ -221,6 +222,7 @@ function getServerStatus(
       } else {
         const res = parseServerStatusPacket(serverAddress, serverPort, buffer);
         resolve(res);
+        client.destroy();
         return;
       }
     });
@@ -228,6 +230,18 @@ function getServerStatus(
     client.on("error", (error) => {
       log.error("Error", error);
       reject(error);
+    });
+
+    client.on("close", () => {
+      client.destroy();
+      const msg = `${serverAddress}:${serverPort} ${version} 服务器关闭 跳过检测！`;
+      reject(msg);
+    });
+
+    client.setTimeout(3000, () => {
+      client.destroy();
+      const msg = `${serverAddress}:${serverPort} ${version} 连接超时，跳过查询！`;
+      reject(msg);
     });
   });
 }
