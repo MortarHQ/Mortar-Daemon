@@ -1,8 +1,7 @@
-import { Server, decodePacketID } from "@utils/serverListPingAPI";
+import { MinecraftProtocolHandler } from "@utils/serverListPingAPI";
 import net from "net";
 import log from "@utils/logger";
 import { config } from "./config/config_parser";
-import path from "path";
 
 // 创建 TCP 服务器
 log.info("Starting server...");
@@ -10,48 +9,29 @@ const server = net.createServer();
 
 server.on("connection", (socket) => {
   log.info(`New connection from ${socket.remoteAddress}:${socket.remotePort}`);
-  socket.on("data", async (data) => {
-    if (data[0] === 0xfe) {
-      //TODO version <=1.6
-      // 暂不响应
-      socket.destroy();
-      return;
-    }
 
-    // 解析接收到的包
-    const { length, packetID } = decodePacketID(data);
-    switch (true) {
-      /* Ping Request */
-      case packetID.value === 0x01: {
-        /* Pong Response */
-        log.info(
-          `Pong from ${socket.remoteAddress}:${
-            socket.remotePort
-          } => ${data.toString("hex")}`
-        );
-        socket.write(data);
-        socket.destroy();
-        break;
-      }
-      /* Handshake | Status Request */
-      case packetID.value === 0x00: {
-        /* Status Request => void */
-        if (data.length === 2) {
-          // 无需回复
-          return;
-        }
-        /* Handshake => Status Response */
-        const server = new Server(socket, data);
-        const packet = await server.createFakeServerPacket().then((res) => res);
-        socket.write(packet);
-        break;
-      }
-      default: {
-        socket.destroy();
-        break;
-      }
+  // 为每个连接创建一个协议处理器
+  const protocolHandler = new MinecraftProtocolHandler(socket);
+
+  // 处理数据
+  socket.on("data", async (data) => {
+    try {
+      await protocolHandler.handlePacket(data);
+    } catch (err) {
+      log.error("处理数据包时出错:", err);
+      socket.destroy();
     }
-    return;
+  });
+
+  // 添加错误处理
+  socket.on("error", (err) => {
+    log.error(`Socket错误: ${err.message}`);
+    socket.destroy();
+  });
+
+  // 添加连接关闭处理
+  socket.on("close", () => {
+    log.debug(`连接已关闭: ${socket.remoteAddress}:${socket.remotePort}`);
   });
 });
 
@@ -63,4 +43,5 @@ server.listen(port, () => {
 
 process.on("uncaughtException", (err) => {
   log.error(`Uncaught Exception: ${err.message}`);
+  console.trace(err);
 });

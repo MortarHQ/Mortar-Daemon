@@ -8,6 +8,192 @@ import { ServerStatus, VERSION } from "@declare/delcare_const";
 
 const SERVERLIST = "/serverlist";
 
+class MinecraftProtocolHandler {
+  private socket: Socket;
+
+  constructor(socket: Socket) {
+    this.socket = socket;
+  }
+
+  // 处理接收到的数据包
+  async handlePacket(data: Buffer): Promise<void> {
+    try {
+      // 处理旧版本协议
+      if (data[0] === 0xfe) {
+        log.info(
+          `旧版本协议请求(<=1.6)，来自: ${this.socket.remoteAddress}，暂不响应`
+        );
+        this.socket.destroy();
+        return;
+      }
+
+      // 解析数据包
+      const { length, packetID } = decodePacketID(data);
+
+      log.debug(
+        `收到数据包: ID=${packetID.value}, 长度=${data.length}, 数据=${data
+          .toString("hex")
+          .substring(0, 50)}...`
+      );
+
+      // 根据包ID分发处理
+      switch (packetID.value) {
+        case 0x01: // Ping请求
+          await this.handlePingRequest(data);
+          break;
+
+        case 0x00: // Handshake或Status请求
+          if (data.length === 2) {
+            log.debug("收到Status Request，等待后续数据包");
+            return; // 不处理空的状态请求，等待后续数据包
+          }
+          await this.handleHandshake(data);
+          break;
+
+        default:
+          log.warn(`未知数据包类型: ${packetID.value}`);
+          this.socket.destroy();
+      }
+    } catch (err) {
+      log.error("处理数据包出错:", err);
+      this.socket.destroy();
+    }
+  }
+
+  // 处理Ping请求
+  private async handlePingRequest(data: Buffer): Promise<void> {
+    log.info(
+      `Ping请求，来自: ${this.socket.remoteAddress}:${this.socket.remotePort}`
+    );
+    // Ping请求只需原样返回数据
+    this.socket.write(new Uint8Array(data));
+    this.socket.destroy(); // 完成后关闭连接
+  }
+
+  // 处理Handshake包
+  private async handleHandshake(data: Buffer): Promise<void> {
+    try {
+      // 解析协议版本、地址、端口和下一状态
+      const { length, packetID } = decodePacketID(data);
+
+      // 安全检查: packetID
+      if (packetID.offset >= data.length) {
+        throw new Error("无效的数据包格式");
+      }
+
+      const protocolVersion = readVarInt(data, packetID.offset);
+
+      // 安全检查: 协议版本
+      if (protocolVersion.offset >= data.length) {
+        throw new Error("协议版本偏移量超出范围");
+      }
+
+      const addressLength = readVarInt(data, protocolVersion.offset);
+
+      // 安全检查: 地址长度
+      if (
+        addressLength.offset >= data.length ||
+        addressLength.offset + addressLength.value > data.length
+      ) {
+        throw new Error("地址长度超出范围");
+      }
+
+      const address = data.toString(
+        "utf-8",
+        addressLength.offset,
+        addressLength.offset + addressLength.value
+      );
+
+      const portOffset = addressLength.offset + addressLength.value;
+
+      // 安全检查: 端口偏移量
+      if (portOffset + 2 > data.length) {
+        throw new Error("端口偏移量超出范围");
+      }
+
+      const port = data.readUInt16BE(portOffset);
+
+      // 安全检查: 状态偏移量
+      if (portOffset + 2 >= data.length) {
+        throw new Error("状态偏移量超出范围");
+      }
+
+      const nextState = readVarInt(data, portOffset + 2);
+
+      log.info(
+        `收到Handshake请求，状态值: ${nextState.value}, 地址: ${address}:${port}, 协议版本: ${protocolVersion.value}`
+      );
+
+      // 根据状态值处理
+      switch (nextState.value) {
+        case 0x01: // 状态查询
+          await this.handleStatusRequest(protocolVersion.value);
+          break;
+        case 0x02: // 登录请求
+          await this.handleLoginRequest();
+          this.socket.destroy(); // 登录请求处理完后关闭连接
+          break;
+        default:
+          log.warn(`未知状态值: ${nextState.value}`);
+          this.socket.destroy();
+      }
+    } catch (err) {
+      log.error("处理Handshake出错:", err);
+      this.socket.destroy();
+    }
+  }
+
+  // 处理状态查询请求
+  private async handleStatusRequest(protocolVersion: number): Promise<void> {
+    log.info(`处理状态查询请求，来自: ${this.socket.remoteAddress}`);
+    try {
+      // 从API获取服务器列表
+      const uri = `http://${config.server.host || "localhost"}:${
+        config.server.web_port
+      }${SERVERLIST}?protocolVersion=${protocolVersion}`;
+
+      const requestInit = {
+        headers: {
+          "X-Forwarded-For": this.socket.remoteAddress,
+        },
+      } as RequestInit;
+
+      const serverList = await fetch(uri, requestInit)
+        .then((response) => response.json())
+        .then((data) => data)
+        .catch((error) => {
+          log.error(import.meta.filename);
+          log.error(error);
+          return [];
+        });
+
+      // 创建响应包并发送
+      const responsePacket = createServerStatusPacket(
+        Buffer.from(JSON.stringify(serverList))
+      );
+
+      this.socket.write(new Uint8Array(responsePacket));
+    } catch (err) {
+      log.error("处理状态查询请求出错:", err);
+      this.socket.destroy();
+    }
+  }
+
+  // 处理登录请求
+  private async handleLoginRequest(): Promise<void> {
+    log.info(`处理登录请求，来自: ${this.socket.remoteAddress}`);
+    try {
+      // 创建断开连接数据包
+      const disconnectPacket = createLoginDisconnectPacket(this.socket);
+      this.socket.write(new Uint8Array(disconnectPacket));
+    } catch (err) {
+      log.error("处理登录请求出错:", err);
+      this.socket.destroy();
+    }
+  }
+}
+
+// 原有的Client类，保持不变
 class Client {
   private host;
   private port;
@@ -21,86 +207,6 @@ class Client {
   async getServerStatus(): Promise<ServerStatus> {
     return await getServerStatus(this.host, this.port, this.version);
   }
-}
-
-class Server {
-  private socket;
-  private clientData;
-  createFakeServerPacket: () => Promise<Buffer>;
-
-  constructor(socket: net.Socket, clientData: Buffer) {
-    this.socket = socket;
-    this.clientData = clientData;
-    this.createFakeServerPacket = createFakeServerPacket.bind(
-      this,
-      this.socket,
-      this.clientData
-    );
-  }
-}
-
-function decodePacketID(data: Buffer) {
-  const length = readVarInt(data, 0);
-  const packetID = readVarInt(data, length.offset);
-  return { length, packetID };
-}
-
-function createFakeServerPacket(
-  socket: Socket,
-  clientData: Buffer
-): Promise<Buffer> {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const { length, packetID } = decodePacketID(clientData);
-      const protocolVersion = readVarInt(clientData, packetID.offset);
-      const addressLength = readVarInt(clientData, protocolVersion.offset);
-      const address = clientData.toString(
-        "utf-8",
-        addressLength.offset,
-        addressLength.value
-      );
-      const portOffset = addressLength.offset + addressLength.value;
-      const port = clientData.readUInt16BE(portOffset);
-      const nextState = readVarInt(clientData, portOffset + 2);
-
-      log.info(`收到连接请求，状态值: ${nextState.value}`);
-
-      // 检查状态值，处理玩家加入请求
-      // 标准Minecraft协议中，2表示玩家想要登录/加入服务器
-      // 从日志中看，值为100时也可能表示加入请求
-      if (nextState.value === 0x02) {
-        log.info(`接收到玩家尝试加入服务器请求: ${socket.remoteAddress}`);
-        const disconnectPacket = createLoginDisconnectPacket(socket);
-        resolve(disconnectPacket);
-        return;
-      }
-
-      const uri = `http://${config.server.host || "localhost"}:${
-        config.server.web_port
-      }${SERVERLIST}?protocolVersion=${protocolVersion.value}`;
-      const requestInit = {
-        headers: {
-          "X-Forwarded-For": socket.remoteAddress,
-        },
-      } as RequestInit;
-      const serverList = await fetch(uri, requestInit)
-        .then((response) => response.json())
-        .then((data) => data)
-        .catch((error) => {
-          log.error(import.meta.filename);
-          log.error(error);
-          return [];
-        });
-
-      const buffer = createServerStatusPacket(
-        Buffer.from(JSON.stringify(serverList))
-      );
-      resolve(buffer);
-    } catch (error) {
-      log.error("Error in createFakeServerPacket:", error);
-      reject(error);
-    }
-  });
 }
 
 // 创建登录状态下的断开连接数据包
@@ -286,6 +392,12 @@ function createPacket(data: Buffer): Buffer {
   return res;
 }
 
+function decodePacketID(data: Buffer) {
+  const length = readVarInt(data, 0);
+  const packetID = readVarInt(data, length.offset);
+  return { length, packetID };
+}
+
 function readVarInt(buffer: Buffer, offset: number) {
   if (offset >= buffer.length) {
     log.error(`offset:${offset} buffer:${buffer.toString("hex")}`);
@@ -301,5 +413,5 @@ function readVarInt(buffer: Buffer, offset: number) {
   };
 }
 
-export { decodePacketID };
-export { Client, Server };
+// 导出需要的类和函数
+export { MinecraftProtocolHandler, Client, decodePacketID };
