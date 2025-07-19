@@ -1,6 +1,7 @@
-import { Client, ServerStatus, Version } from "@utils/serverListPingAPI";
+import { Client } from "@utils/serverListPingAPI";
 import express from "express";
 import { config } from "../config_loader";
+import { ServerStatus, Version } from "@declare/delcare_const";
 
 function initRouter() {
   const SERVER_LIST = config.server_list;

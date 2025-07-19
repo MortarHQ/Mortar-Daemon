@@ -4,64 +4,9 @@ import log from "@utils/logger";
 import varint from "varint";
 import { getServerIcon } from "@utils/image-utils";
 import { config } from "../config_loader";
+import { ServerStatus, VERSION_TO_PROTOCOL_MAP } from "@declare/delcare_const";
 
 const SERVERLIST = "/serverlist";
-
-const version2ProtocolMap = {
-  "1.20.4": 765,
-  "1.19.2": 760,
-  "1.18.2": 758,
-  "1.16.5": 762,
-  "1.12.2": 340,
-};
-
-type Version = keyof typeof version2ProtocolMap;
-type ServerStatus = {
-  previewsChat: Boolean;
-  enforcesSecureChat: Boolean;
-  description: Object;
-  players: {
-    max: Number;
-    online: Number;
-    sample?: { name: String; id: String }[];
-  };
-  version: {
-    name: keyof typeof version2ProtocolMap | String;
-    protocol:
-      | (typeof version2ProtocolMap)[keyof typeof version2ProtocolMap]
-      | Number;
-  };
-  favicon: String;
-  forgeData?: {
-    fmlNetworkVersion: Number;
-    d: String;
-    chanels: {
-      res: String;
-      version: String;
-      required: Boolean;
-    }[];
-    mods: [
-      {
-        modId: String;
-        modmarker: String;
-      }
-    ];
-    truncated: true;
-  };
-  modinfo?: {
-    type: "FML";
-    modList: {
-      modid: String;
-      version: String;
-    };
-  };
-  modpackData?: {
-    projectID: Number;
-    name: String;
-    version: String;
-    isMetadata: Boolean;
-  };
-};
 
 class Client {
   private host;
@@ -70,7 +15,7 @@ class Client {
   constructor(
     host: string,
     port: string,
-    version: keyof typeof version2ProtocolMap
+    version: keyof typeof VERSION_TO_PROTOCOL_MAP
   ) {
     this.host = host;
     this.port = port;
@@ -150,7 +95,7 @@ function createFakeServerPacket(
 function getServerStatus(
   serverAddress: string,
   serverPort: string,
-  version: keyof typeof version2ProtocolMap = "1.16.5"
+  version: keyof typeof VERSION_TO_PROTOCOL_MAP = "1.16.5"
 ) {
   return new Promise((resolve, reject) => {
     log.info(`正在获取 ${serverAddress}:${serverPort} ${version} 服务器状态`);
@@ -247,7 +192,7 @@ function parseServerStatusPacket(
 function createHandshakePacket(
   address: string,
   port: number,
-  version: keyof typeof version2ProtocolMap
+  version: keyof typeof VERSION_TO_PROTOCOL_MAP
 ): Buffer {
   const packetID = Buffer.from([0x00]); // 握手的packet ID
   const protocolVersion = encodeProtocol(version); // 协议版本
@@ -277,12 +222,12 @@ function createPacket(data: Buffer): Buffer {
   return res;
 }
 
-function version2Protocol(versionString: keyof typeof version2ProtocolMap) {
-  if (versionString in version2ProtocolMap) {
-    return version2ProtocolMap[versionString];
+function version2Protocol(versionString: keyof typeof VERSION_TO_PROTOCOL_MAP) {
+  if (versionString in VERSION_TO_PROTOCOL_MAP) {
+    return VERSION_TO_PROTOCOL_MAP[versionString];
   } else {
     log.warn(`不支持${versionString}，已自动替换成1.16.5`);
-    return version2ProtocolMap["1.16.5"];
+    return VERSION_TO_PROTOCOL_MAP["1.16.5"];
   }
 }
 
@@ -292,7 +237,7 @@ function version2Protocol(versionString: keyof typeof version2ProtocolMap) {
  * @returns
  */
 function encodeProtocol(
-  versionString: keyof typeof version2ProtocolMap
+  versionString: keyof typeof VERSION_TO_PROTOCOL_MAP
 ): Buffer {
   let version = version2Protocol(versionString);
   return Buffer.from(varint.encode(version));
@@ -319,4 +264,3 @@ function getBase64Image() {
 
 export { getBase64Image, decodePacketID, version2Protocol };
 export { Client, Server };
-export type { Version, ServerStatus };
