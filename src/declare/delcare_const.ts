@@ -4,7 +4,7 @@ export const VERSION_TO_PROTOCOL_MAP = {
   "1.18.2": 758,
   "1.16.5": 762,
   "1.12.2": 340,
-};
+} as const;
 
 export type VERSION = keyof typeof VERSION_TO_PROTOCOL_MAP;
 export type ServerStatus = {
@@ -17,7 +17,7 @@ export type ServerStatus = {
     sample?: { name: String; id: String }[];
   };
   version: {
-    name: keyof typeof VERSION_TO_PROTOCOL_MAP | String;
+    name: VERSION | String;
     protocol:
       | (typeof VERSION_TO_PROTOCOL_MAP)[keyof typeof VERSION_TO_PROTOCOL_MAP]
       | Number;
