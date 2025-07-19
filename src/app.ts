@@ -5,13 +5,10 @@ import morgan from "morgan";
 import initRouter from "@routes";
 import initMiddleWare from "@middleware";
 import log from "@utils/logger";
-import { parseIniConfig } from "./config_loader";
+import { config } from "./config_loader";
 
 const __filename = import.meta.filename;
 const __dirname = import.meta.dirname;
-
-const configPath = path.join(process.cwd(), 'data', 'config.ini');
-const parsedConfig = parseIniConfig(configPath);
 
 const app = express();
 
@@ -21,7 +18,7 @@ app.set("view engine", "ejs");
 
 // 中间件
 initMiddleWare(app);
-app.use(morgan(parsedConfig.server.logFormat || "combined"));
+app.use(morgan(config.server.logFormat || "combined"));
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());
 

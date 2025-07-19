@@ -5,14 +5,12 @@ import {
   getBase64Image,
   version2Protocol,
 } from "@utils/serverListPingAPI";
-import { parseIniConfig } from "../config_loader";
+import { config } from "../config_loader";
 import path from "path";
 
 function initRouter() {
-  const configPath = path.join(process.cwd(), 'data', 'config.ini');
-  const parsedConfig = parseIniConfig(configPath);
-  const host = parsedConfig.server.host || 'localhost';
-  const port = parsedConfig.server.web_port;
+  const host = config.server.host || 'localhost';
+  const port = config.server.web_port;
   const addr = `http://${host}:${port}`;
 
   const router = express.Router();

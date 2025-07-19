@@ -4,7 +4,7 @@ import log from "@utils/logger";
 import varint from "varint";
 import fs from "fs";
 import path from "path";
-import { parseIniConfig } from "../config_loader";
+import { config } from "../config_loader";
 
 const SERVERLIST = "/serverlist";
 
@@ -68,8 +68,6 @@ class Client {
   private host;
   private port;
   private version;
-  getServerListPingWithCache;
-
   constructor(
     host: string,
     port: string,
@@ -78,12 +76,10 @@ class Client {
     this.host = host;
     this.port = port;
     this.version = version;
-    this.getServerListPingWithCache = getServerStatusWithCache.bind(
-      this,
-      this.host,
-      this.port,
-      this.version
-    );
+  }
+
+  async getServerStatus(): Promise<ServerStatus> {
+    return await getServerStatus(this.host, this.port, this.version);
   }
 }
 
@@ -127,9 +123,7 @@ function createFakeServerPacket(
     const state = clientData[addressLength.value + 2];
 
     // 读取Mortar Server List列表
-    const configPath = path.join(process.cwd(), 'data', 'config.ini');
-    const parsedConfig = parseIniConfig(configPath);
-    const uri = `http://${parsedConfig.server.host || 'localhost'}:${parsedConfig.server.port}${SERVERLIST}?protocolVersion=${protocolVersion.value}`;
+    const uri = `http://${config.server.host || 'localhost'}:${config.server.web_port}${SERVERLIST}?protocolVersion=${protocolVersion.value}`;
     const requestInit = {
       headers: {
         "X-Forwarded-For": socket.remoteAddress,
@@ -152,45 +146,6 @@ function createFakeServerPacket(
   });
 }
 
-/**
- * Returns a function that can be used to retrieve the server status for a given host and port, using a cache to avoid unnecessary requests.
- * @param host The hostname or IP address of the server.
- * @param port The port number of the server.
- * @param version The version of the Minecraft protocol to use for the request.
- * @returns A function that takes no arguments and returns a Promise that resolves to the server status. The function uses a cache to avoid unnecessary requests, and the cache is refreshed automatically after a period of inactivity.
- */
-function getServerStatusWithCache(
-  host: string,
-  port: string,
-  version: keyof typeof version2ProtocolMap
-): () => Promise<ServerStatus> {
-  let lastBuffData = {
-    data: {} as ServerStatus,
-    time: 0,
-  };
-  return () => {
-    return new Promise((resolve, reject) => {
-      // 缓存未过期
-      if (lastBuffData.time + 60 * 1000 > Date.now()) {
-        log.debug(`${host}:${port} ${version} 缓存未过期`);
-        resolve(lastBuffData.data);
-        return;
-      }
-      // 缓存过期
-      log.warn(`${host}:${port} ${version} 缓存过期`);
-      getServerStatus(host, port, version)
-        .then((data) => {
-          lastBuffData.data = data as ServerStatus;
-          lastBuffData.time = Date.now();
-          resolve(lastBuffData.data);
-        })
-        .catch((err) => {
-          log.error(err);
-          resolve({} as ServerStatus);
-        });
-    });
-  };
-}
 
 function getServerStatus(
   serverAddress: string,
@@ -358,27 +313,23 @@ function readVarInt(buffer: Buffer, offset: number) {
   };
 }
 
-let cachedBase64Image: string | null = null;
-
-function getBase64Image() {
-  if (cachedBase64Image) {
-    return cachedBase64Image;
-  }
+const cachedBase64Image: string = (() => {
   try {
-    // 读取图片文件
     const imagePath = path.join(process.cwd(), "data", "server-icon.png");
     const imageBuffer = fs.readFileSync(imagePath);
-    // 转换为base64并缓存
-    cachedBase64Image = `data:image/png;base64,${imageBuffer.toString("base64")}`;
-    return cachedBase64Image;
+    return `data:image/png;base64,${imageBuffer.toString("base64")}`;
   } catch (error) {
-    // 错误处理：如果无法读取文件，记录错误并返回空字符串
     log.error(`无法读取服务器图标: ${error.message}`);
-    // 返回空字符串或可以选择返回一个默认的小图标
     return "";
   }
+})();
+
+function getBase64Image() {
+  return cachedBase64Image;
 }
 
 export { getBase64Image, decodePacketID, version2Protocol };
 export { Client, Server };
 export type { Version, ServerStatus };
+
+
