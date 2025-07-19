@@ -100,15 +100,15 @@ function getServerStatus(
         parseInt(serverPort, 10),
         version
       );
-      client.write(handshakePacket);
+      client.write(new Uint8Array(handshakePacket));
 
       const statusRequestPacket = createStatusRequestPacket();
-      client.write(statusRequestPacket);
+      client.write(new Uint8Array(statusRequestPacket));
     });
 
     let buffer = Buffer.alloc(0);
     client.on("data", (data) => {
-      buffer = Buffer.concat([buffer, data]);
+      buffer = Buffer.concat([new Uint8Array(buffer), new Uint8Array(data)]);
       let varint = readVarInt(buffer, 0);
       if (buffer.length < varint.value) {
         return;
@@ -146,12 +146,8 @@ function createServerStatusPacket(jsonBuffer: Buffer) {
   const varInt = Buffer.from(varint.encode(0));
 
   const buffer = Buffer.concat([
-    new Uint8Array(varInt.buffer, varInt.byteOffset, varInt.byteLength),
-    new Uint8Array(
-      jsonPacket.buffer,
-      jsonPacket.byteOffset,
-      jsonPacket.byteLength
-    ),
+    new Uint8Array(varInt),
+    new Uint8Array(jsonPacket),
   ]);
 
   return createPacket(buffer);
@@ -200,19 +196,11 @@ function createHandshakePacket(
   const state = Buffer.from([0x01]);
 
   const packet = Buffer.concat([
-    new Uint8Array(packetID.buffer, packetID.byteOffset, packetID.byteLength),
-    new Uint8Array(
-      protocolVersion.buffer,
-      protocolVersion.byteOffset,
-      protocolVersion.byteLength
-    ),
-    new Uint8Array(
-      addressBuf.buffer,
-      addressBuf.byteOffset,
-      addressBuf.byteLength
-    ),
-    new Uint8Array(portBuf.buffer, portBuf.byteOffset, portBuf.byteLength),
-    new Uint8Array(state.buffer, state.byteOffset, state.byteLength),
+    new Uint8Array(packetID),
+    new Uint8Array(protocolVersion),
+    new Uint8Array(addressBuf),
+    new Uint8Array(portBuf),
+    new Uint8Array(state),
   ]);
 
   return createPacket(packet);
@@ -220,18 +208,13 @@ function createHandshakePacket(
 
 function createStatusRequestPacket(): Buffer {
   const packetID = Buffer.from([0x00]);
-  const packet = Buffer.concat([
-    new Uint8Array(packetID.buffer, packetID.byteOffset, packetID.byteLength),
-  ]);
+  const packet = Buffer.concat([new Uint8Array(packetID)]);
   return createPacket(packet);
 }
 
 function createPacket(data: Buffer): Buffer {
   const length = Buffer.from(varint.encode(data.length));
-  const res = Buffer.concat([
-    new Uint8Array(length.buffer, length.byteOffset, length.byteLength),
-    new Uint8Array(data.buffer, data.byteOffset, data.byteLength),
-  ]);
+  const res = Buffer.concat([new Uint8Array(length), new Uint8Array(data)]);
   return res;
 }
 
