@@ -4,7 +4,7 @@ import log from "@utils/logger";
 import varint from "varint";
 import { getServerIcon } from "@utils/image-utils";
 import { config } from "../config_loader";
-import { ServerStatus, VERSION_TO_PROTOCOL_MAP } from "@declare/delcare_const";
+import { ServerStatus, VERSION, VERSION_TO_PROTOCOL_MAP } from "@declare/delcare_const";
 
 const SERVERLIST = "/serverlist";
 
@@ -95,7 +95,7 @@ function createFakeServerPacket(
 function getServerStatus(
   serverAddress: string,
   serverPort: string,
-  version: keyof typeof VERSION_TO_PROTOCOL_MAP = "1.16.5"
+  version: VERSION = "1.16.5"
 ) {
   return new Promise((resolve, reject) => {
     log.info(`正在获取 ${serverAddress}:${serverPort} ${version} 服务器状态`);

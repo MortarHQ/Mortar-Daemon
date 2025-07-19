@@ -6,7 +6,7 @@ export const VERSION_TO_PROTOCOL_MAP = {
   "1.12.2": 340,
 };
 
-export type Version = keyof typeof VERSION_TO_PROTOCOL_MAP;
+export type VERSION = keyof typeof VERSION_TO_PROTOCOL_MAP;
 export type ServerStatus = {
   previewsChat: Boolean;
   enforcesSecureChat: Boolean;
