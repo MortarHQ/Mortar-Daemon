@@ -1,6 +1,5 @@
 import fs from "fs";
 import path from "path";
-import * as ini from "ini";
 
 interface ServerConfig {
   host: string;
@@ -30,13 +29,13 @@ function loadConfig(): ParsedConfig {
     server: { port: "25565" }, // Default port
   };
 
-  // 手动解析配置文件，以确保捕获所有 server_list 段落
-  const sections = content.split(/\[\w+.*?\]/g).filter(Boolean);
-  const sectionNames = content.match(/\[\w+.*?\]/g) || [];
+  // 使用正则表达式更精确地匹配各个段落
+  const sectionRegex = /\[(.*?)\]([\s\S]*?)(?=\[|$)/g;
+  let match;
 
-  for (let i = 0; i < sectionNames.length; i++) {
-    const sectionName = sectionNames[i].replace(/[\[\]]/g, "");
-    const sectionContent = sections[i];
+  while ((match = sectionRegex.exec(content)) !== null) {
+    const sectionName = match[1].trim();
+    const sectionContent = match[2].trim();
 
     if (sectionName === "server_list") {
       const serverConfig: ServerConfig = {
@@ -61,24 +60,18 @@ function loadConfig(): ParsedConfig {
         parsedData.server_list.push(serverConfig);
       }
     } else if (sectionName === "server") {
-      const serverConfig: MainConfig = {
-        port: "25565", // 默认值
-      };
-
       // 解析每一行
       const lines = sectionContent.split("\n").filter((line) => line.trim());
       for (const line of lines) {
         const [key, value] = line.split("=").map((part) => part.trim());
         if (key && value) {
-          if (key === "port") serverConfig.port = value;
-          else if (key === "web_port") serverConfig.web_port = value;
-          else if (key === "logLevel") serverConfig.logLevel = value;
-          else if (key === "logFormat") serverConfig.logFormat = value;
-          else if (key === "host") serverConfig.host = value;
+          if (key === "port") parsedData.server.port = value;
+          else if (key === "web_port") parsedData.server.web_port = value;
+          else if (key === "logLevel") parsedData.server.logLevel = value;
+          else if (key === "logFormat") parsedData.server.logFormat = value;
+          else if (key === "host") parsedData.server.host = value;
         }
       }
-
-      parsedData.server = serverConfig;
     }
   }
 
