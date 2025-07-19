@@ -4,7 +4,11 @@ import log from "@utils/logger";
 import varint from "varint";
 import { getServerIcon } from "@utils/image-utils";
 import { config } from "../config_loader";
-import { ServerStatus, VERSION, VERSION_TO_PROTOCOL_MAP } from "@declare/delcare_const";
+import {
+  ServerStatus,
+  VERSION,
+  VERSION_TO_PROTOCOL_MAP,
+} from "@declare/delcare_const";
 
 const SERVERLIST = "/serverlist";
 
@@ -125,6 +129,9 @@ function getServerStatus(
         const res = parseServerStatusPacket(serverAddress, serverPort, buffer);
         resolve(res);
         client.destroy();
+        log.info(
+          `获取 ${serverAddress}:${serverPort} ${version} 服务器状态成功！`
+        );
         return;
       }
     });

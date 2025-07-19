@@ -2,6 +2,7 @@ import { Client } from "@utils/serverListPingAPI";
 import express from "express";
 import { config } from "../config_loader";
 import { ServerStatus, VERSION } from "@declare/delcare_const";
+import log from "@utils/logger";
 
 function initRouter() {
   const SERVER_LIST = config.server_list;
@@ -27,7 +28,7 @@ function initRouter() {
       /* 客户端发起请求 */
       const promises = clientsList.map((client) =>
         client.getServerStatus().catch((err) => {
-          console.error(`服务器状态查询错误: ${err}`);
+          log.error(`服务器状态查询错误: ${err}`);
           return null; // 返回 null 表示此服务器查询失败
         })
       );
