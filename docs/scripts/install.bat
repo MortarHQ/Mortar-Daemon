@@ -6,7 +6,7 @@ chcp 65001 > nul
 
 :: 接收参数
 set "COMMAND=%1"
-set "REQUIRED_NODE_VERSION=22"
+set "REQUIRED_NODE_VERSION=20"
 set "BUNDLED_NODE_VERSION=v20.11.0"
 set "CURRENT_DIR=%CD%"
 set "NODE_ZIP_DIR=%CURRENT_DIR%\node_%BUNDLED_NODE_VERSION%"
@@ -59,6 +59,10 @@ if "%USE_SYSTEM_NODE%"=="false" (
         
         if not exist "%NODE_ZIP_DIR%" (
             mkdir "%NODE_ZIP_DIR%" >nul 2>&1
+            if not %errorlevel% == 0 (
+                echo [错误] 创建Node.js目录失败。
+                goto :end
+            )
         )
         
         cd "%NODE_ZIP_DIR%"
@@ -79,6 +83,12 @@ if "%USE_SYSTEM_NODE%"=="false" (
             echo [错误] 解压Node.js失败。
             cd "%CURRENT_DIR%"
             goto :end
+        )
+        
+        :: 清理下载的zip文件
+        del /q "node.zip" >nul 2>&1
+        if not %errorlevel% == 0 (
+            echo [警告] 清理Node.js安装包失败，但将继续执行。
         )
         
         echo [信息] Node.js%BUNDLED_NODE_VERSION%安装完成。
@@ -110,6 +120,12 @@ if not exist "%PROJECT_DIR%" (
         goto :end
     )
     
+    :: 清理下载的zip文件
+    del /q "%CURRENT_DIR%\project.zip" >nul 2>&1
+    if not %errorlevel% == 0 (
+        echo [警告] 清理项目安装包失败，但将继续执行。
+    )
+    
     echo [信息] 项目文件下载并解压完成。
 ) else (
     echo [信息] 项目目录已存在。
@@ -117,12 +133,20 @@ if not exist "%PROJECT_DIR%" (
 
 :: 安装依赖并运行项目
 cd "%PROJECT_DIR%"
+if not %errorlevel% == 0 (
+    echo [错误] 无法进入项目目录。
+    goto :end
+)
 
 echo [信息] 正在安装依赖...
 call npm install
 if not %errorlevel% == 0 (
-    echo [警告] 安装依赖失败，尝试重新安装...
+    echo [警告] 首次安装依赖失败，尝试重新安装...
     call npm install
+    if not %errorlevel% == 0 (
+        echo [错误] 依赖安装失败，终止执行。
+        goto :end
+    )
 )
 
 echo ==================================================
@@ -132,7 +156,15 @@ if "%COMMAND%"=="start" (
     if not %errorlevel% == 0 (
         echo [警告] 启动失败，尝试重新安装依赖...
         call npm install
+        if not %errorlevel% == 0 (
+            echo [错误] 依赖重新安装失败，终止执行。
+            goto :end
+        )
         call npm start
+        if not %errorlevel% == 0 (
+            echo [错误] 项目启动失败，请检查错误日志。
+            goto :end
+        )
     )
 ) else if "%COMMAND%"=="dev" (
     echo [信息] 尝试以开发模式启动项目...
@@ -140,7 +172,15 @@ if "%COMMAND%"=="start" (
     if not %errorlevel% == 0 (
         echo [警告] 启动失败，尝试重新安装依赖...
         call npm install
+        if not %errorlevel% == 0 (
+            echo [错误] 依赖重新安装失败，终止执行。
+            goto :end
+        )
         call npm run dev
+        if not %errorlevel% == 0 (
+            echo [错误] 项目开发模式启动失败，请检查错误日志。
+            goto :end
+        )
     )
 ) else (
     echo [信息] 安装完成！

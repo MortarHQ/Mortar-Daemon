@@ -15,6 +15,12 @@ NODE_ZIP_DIR=${CURRENT_DIR}/node_${BUNDLED_NODE_VERSION}
 PROJECT_ZIP_URL="https://github.com/MortarHQ/Mortar-Daemon/archive/refs/heads/master.zip"
 PROJECT_DIR=${CURRENT_DIR}/Mortar-Daemon-master
 
+# 设置错误退出函数
+exit_on_error() {
+    print_error "$1"
+    exit 1
+}
+
 # 打印带颜色的消息
 print_info() {
     echo -e "${GREEN}[信息] $1${NC}"
@@ -36,9 +42,7 @@ case "$(uname -s)" in
 Linux*) OS=linux ;;
 Darwin*) OS=darwin ;;
 *)
-    print_error "不支持的操作系统。"
-    print_error "请尝试手动安装！"
-    exit 1
+    exit_on_error "不支持的操作系统。请尝试手动安装！"
     ;;
 esac
 
@@ -52,20 +56,18 @@ for tool in curl unzip; do
         case "$(uname -s)" in
         Linux*)
             if [ -f /etc/debian_version ]; then
-                sudo apt-get install $tool -y
+                sudo apt-get install $tool -y || exit_on_error "安装 $tool 失败"
             elif [ -f /etc/redhat-release ]; then
-                sudo yum install $tool -y
+                sudo yum install $tool -y || exit_on_error "安装 $tool 失败"
             else
-                print_error "不支持的 Linux 发行版。请手动安装 $tool。"
-                exit 1
+                exit_on_error "不支持的 Linux 发行版。请手动安装 $tool。"
             fi
             ;;
         Darwin*)
-            brew install $tool
+            brew install $tool || exit_on_error "安装 $tool 失败"
             ;;
         *)
-            print_error "不支持的操作系统。请手动安装 $tool。"
-            exit 1
+            exit_on_error "不支持的操作系统。请手动安装 $tool。"
             ;;
         esac
     fi
@@ -102,21 +104,24 @@ fi
 if [ "$USE_SYSTEM_NODE" = false ]; then
     if [ ! -d "${NODE_DIR}" ]; then
         print_info "Node.js ${BUNDLED_NODE_VERSION} 未在当前目录找到，正在下载..."
-        cd ${CURRENT_DIR}
-        mkdir -p ${NODE_ZIP_DIR}
-        cd ${NODE_ZIP_DIR}
+        cd ${CURRENT_DIR} || exit_on_error "无法切换到当前目录"
+        mkdir -p ${NODE_ZIP_DIR} || exit_on_error "创建 Node.js 目录失败"
+        cd ${NODE_ZIP_DIR} || exit_on_error "无法进入 Node.js 目录"
+        
         if ! curl -O https://nodejs.org/dist/${BUNDLED_NODE_VERSION}/node-${BUNDLED_NODE_VERSION}-${OS}-x64.tar.gz; then
-            print_error "下载 Node.js 失败。"
-            exit 1
+            exit_on_error "下载 Node.js 失败"
         fi
 
-        mkdir -p ${NODE_DIR}
+        mkdir -p ${NODE_DIR} || exit_on_error "创建 Node.js 解压目录失败"
         if ! tar -xzf node-${BUNDLED_NODE_VERSION}-${OS}-x64.tar.gz -C ${NODE_DIR} --strip-components=1; then
-            print_error "解压 Node.js 失败。"
-            exit 1
+            exit_on_error "解压 Node.js 失败"
         fi
-        cd ..
-        print_info "Node.js ${BUNDLED_NODE_VERSION} 安装完成。"
+        
+        # 清理下载的压缩包
+        rm -f node-${BUNDLED_NODE_VERSION}-${OS}-x64.tar.gz || print_warning "清理 Node.js 安装包失败，但将继续执行"
+        
+        cd ${CURRENT_DIR} || exit_on_error "无法返回原始目录"
+        print_info "Node.js ${BUNDLED_NODE_VERSION} 安装完成"
     else
         print_info "使用当前目录下的 Node.js ${BUNDLED_NODE_VERSION}"
     fi
@@ -129,33 +134,50 @@ fi
 if [ ! -d "${PROJECT_DIR}" ]; then
     print_info "下载项目文件..."
     if ! curl -L ${PROJECT_ZIP_URL} -o project.zip; then
-        print_error "下载项目文件失败。"
-        exit 1
+        exit_on_error "下载项目文件失败"
     fi
     if ! unzip -q project.zip; then
-        print_error "解压项目文件失败。"
-        exit 1
+        exit_on_error "解压项目文件失败"
     fi
-    print_info "项目文件下载并解压完成。"
+    rm -f project.zip || print_warning "清理项目安装包失败，但将继续执行"
+    print_info "项目文件下载并解压完成"
 else
-    print_info "项目目录已存在。"
+    print_info "项目目录已存在"
 fi
 
-cd $PROJECT_DIR
+cd $PROJECT_DIR || exit_on_error "无法进入项目目录"
 
 print_info "安装依赖..."
 if ! npm install; then
     print_warning "安装依赖失败，尝试重新安装..."
-    npm install
+    if ! npm install; then
+        exit_on_error "依赖安装失败，终止执行"
+    fi
 fi
 
 echo "=================================================="
 if [ "$COMMAND" == "start" ]; then
     print_info "尝试启动项目..."
-    npm start || (print_warning "启动失败，尝试重新安装依赖..." && npm install && npm start)
+    if ! npm start; then
+        print_warning "启动失败，尝试重新安装依赖..."
+        if ! npm install; then
+            exit_on_error "依赖重新安装失败，终止执行"
+        fi
+        if ! npm start; then
+            exit_on_error "项目启动失败，请检查错误日志"
+        fi
+    fi
 elif [ "$COMMAND" == "dev" ]; then
     print_info "尝试以开发模式启动项目..."
-    npm run dev || (print_warning "启动失败，尝试重新安装依赖..." && npm install && npm run dev)
+    if ! npm run dev; then
+        print_warning "启动失败，尝试重新安装依赖..."
+        if ! npm install; then
+            exit_on_error "依赖重新安装失败，终止执行"
+        fi
+        if ! npm run dev; then
+            exit_on_error "项目开发模式启动失败，请检查错误日志"
+        fi
+    fi
 else
     print_info "安装完成！"
     echo
