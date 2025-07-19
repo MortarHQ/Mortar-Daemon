@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 
-interface ServerConfig {
+interface ServerListConfig {
   host: string;
   port: string;
   version: string;
@@ -16,7 +16,7 @@ interface MainConfig {
 }
 
 export interface ParsedConfig {
-  server_list: ServerConfig[];
+  server_list: ServerListConfig[];
   server: MainConfig;
 }
 
@@ -38,7 +38,7 @@ function loadConfig(): ParsedConfig {
     const sectionContent = match[2].trim();
 
     if (sectionName === "server_list") {
-      const serverConfig: ServerConfig = {
+      const serverConfig: ServerListConfig = {
         host: "",
         port: "",
         version: "",

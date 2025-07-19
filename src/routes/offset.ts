@@ -1,12 +1,11 @@
 import express from "express";
 import { StatusCodes } from "http-status-codes";
 import { config } from "../config/config_parser";
-import path from "path";
 
 function initRouter() {
   const router = express.Router();
 
-  const host = config.server.host || 'localhost';
+  const host = config.server.host || "localhost";
   const port = config.server.web_port;
   const addr = `http://${host}:${port}`;
 
@@ -49,4 +48,3 @@ function initRouter() {
 }
 
 export default initRouter;
-
