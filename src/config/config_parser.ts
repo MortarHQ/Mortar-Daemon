@@ -8,7 +8,7 @@ interface ServerListConfig {
   [key: string]: string; // 允许添加任意字符串键
 }
 
-interface MainConfig {
+interface ServerConfig {
   port: string;
   web_port?: string;
   logLevel?: string;
@@ -19,7 +19,7 @@ interface MainConfig {
 
 export interface ParsedConfig {
   server_list: ServerListConfig[];
-  server: MainConfig;
+  server: ServerConfig;
 }
 
 function loadConfig(): ParsedConfig {
