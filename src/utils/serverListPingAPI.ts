@@ -3,6 +3,7 @@ import { Buffer } from "buffer";
 import log from "@utils/logger";
 import varint from "varint";
 import { getServerIcon } from "@utils/image-utils";
+import { encodeProtocol, version2Protocol } from "@utils/protocol-utils";
 import { config } from "../config/config_parser";
 import {
   ServerStatus,
@@ -16,11 +17,7 @@ class Client {
   private host;
   private port;
   private version;
-  constructor(
-    host: string,
-    port: string,
-    version: keyof typeof VERSION_TO_PROTOCOL_MAP
-  ) {
+  constructor(host: string, port: string, version: VERSION) {
     this.host = host;
     this.port = port;
     this.version = version;
@@ -199,10 +196,10 @@ function parseServerStatusPacket(
 function createHandshakePacket(
   address: string,
   port: number,
-  version: keyof typeof VERSION_TO_PROTOCOL_MAP
+  version: VERSION
 ): Buffer {
   const packetID = Buffer.from([0x00]); // 握手的packet ID
-  const protocolVersion = encodeProtocol(version); // 协议版本
+  const protocolVersion = encodeProtocol(version, log); // 协议版本
   const addressBuf = createPacket(Buffer.from(address)); // 服务器地址
   const portBuf = Buffer.alloc(2);
   portBuf.writeUInt16BE(port);
@@ -229,27 +226,6 @@ function createPacket(data: Buffer): Buffer {
   return res;
 }
 
-function version2Protocol(versionString: keyof typeof VERSION_TO_PROTOCOL_MAP) {
-  if (versionString in VERSION_TO_PROTOCOL_MAP) {
-    return VERSION_TO_PROTOCOL_MAP[versionString];
-  } else {
-    log.warn(`不支持${versionString}，已自动替换成1.16.5`);
-    return VERSION_TO_PROTOCOL_MAP["1.16.5"];
-  }
-}
-
-/**
- * 将协议号转换到VarInt字节码
- * @param versionString
- * @returns
- */
-function encodeProtocol(
-  versionString: keyof typeof VERSION_TO_PROTOCOL_MAP
-): Buffer {
-  let version = version2Protocol(versionString);
-  return Buffer.from(varint.encode(version));
-}
-
 function readVarInt(buffer: Buffer, offset: number) {
   if (offset >= buffer.length) {
     log.error(`offset:${offset} buffer:${buffer.toString("hex")}`);
@@ -265,9 +241,5 @@ function readVarInt(buffer: Buffer, offset: number) {
   };
 }
 
-function getBase64Image() {
-  return getServerIcon();
-}
-
-export { getBase64Image, decodePacketID, version2Protocol };
+export { decodePacketID };
 export { Client, Server };

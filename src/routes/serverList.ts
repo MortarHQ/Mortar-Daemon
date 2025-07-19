@@ -2,8 +2,9 @@ import { ServerStatus } from "@declare/delcare_const";
 
 import express from "express";
 import log from "@utils/logger";
-import { getBase64Image, version2Protocol } from "@utils/serverListPingAPI";
 import { config } from "../config/config_parser";
+import { version2Protocol } from "@utils/protocol-utils";
+import { getServerIcon } from "@utils/image-utils";
 
 function initRouter() {
   const host = config.server.host || "localhost";
@@ -51,7 +52,7 @@ function initRouter() {
         "name": "mortar",
         "protocol": ${protocolVersion}
     },
-    "favicon": "${getBase64Image()}",
+    "favicon": "${getServerIcon()}",
     "enforcesSecureChat": true,
     "description": [],
     "players": {
