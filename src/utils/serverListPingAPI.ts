@@ -50,39 +50,107 @@ function createFakeServerPacket(
   clientData: Buffer
 ): Promise<Buffer> {
   return new Promise(async (resolve, reject) => {
-    const { length, packetID } = decodePacketID(clientData);
-    const protocolVersion = readVarInt(clientData, packetID.offset);
-    const addressLength = readVarInt(clientData, protocolVersion.offset);
-    const address = clientData.toString(
-      "utf-8",
-      protocolVersion.offset + 1,
-      addressLength.value
-    );
-    const port = clientData.readUInt16BE(addressLength.offset);
-    const state = clientData[addressLength.value + 2];
+    try {
+      const { length, packetID } = decodePacketID(clientData);
+      const protocolVersion = readVarInt(clientData, packetID.offset);
+      const addressLength = readVarInt(clientData, protocolVersion.offset);
+      const address = clientData.toString(
+        "utf-8",
+        addressLength.offset,
+        addressLength.value
+      );
+      const portOffset = addressLength.offset + addressLength.value;
+      const port = clientData.readUInt16BE(portOffset);
+      const nextState = readVarInt(clientData, portOffset + 2);
 
-    const uri = `http://${config.server.host || "localhost"}:${
-      config.server.web_port
-    }${SERVERLIST}?protocolVersion=${protocolVersion.value}`;
-    const requestInit = {
-      headers: {
-        "X-Forwarded-For": socket.remoteAddress,
-      },
-    } as RequestInit;
-    const serverList = await fetch(uri, requestInit)
-      .then((response) => response.json())
-      .then((data) => data)
-      .catch((error) => {
-        log.error(import.meta.filename);
-        log.error(error);
-        return [];
-      });
+      log.info(`收到连接请求，状态值: ${nextState.value}`);
 
-    const buffer = createServerStatusPacket(
-      Buffer.from(JSON.stringify(serverList))
-    );
-    resolve(buffer);
+      // 检查状态值，处理玩家加入请求
+      // 标准Minecraft协议中，2表示玩家想要登录/加入服务器
+      // 从日志中看，值为100时也可能表示加入请求
+      if (nextState.value === 0x02) {
+        log.info(`接收到玩家尝试加入服务器请求: ${socket.remoteAddress}`);
+        const disconnectPacket = createLoginDisconnectPacket(socket);
+        resolve(disconnectPacket);
+        return;
+      }
+
+      const uri = `http://${config.server.host || "localhost"}:${
+        config.server.web_port
+      }${SERVERLIST}?protocolVersion=${protocolVersion.value}`;
+      const requestInit = {
+        headers: {
+          "X-Forwarded-For": socket.remoteAddress,
+        },
+      } as RequestInit;
+      const serverList = await fetch(uri, requestInit)
+        .then((response) => response.json())
+        .then((data) => data)
+        .catch((error) => {
+          log.error(import.meta.filename);
+          log.error(error);
+          return [];
+        });
+
+      const buffer = createServerStatusPacket(
+        Buffer.from(JSON.stringify(serverList))
+      );
+      resolve(buffer);
+    } catch (error) {
+      log.error("Error in createFakeServerPacket:", error);
+      reject(error);
+    }
   });
+}
+
+// 创建登录状态下的断开连接数据包
+function createLoginDisconnectPacket(socket: net.Socket): Buffer {
+  // 在登录状态下的断开连接包ID是0x00
+  const packetID = Buffer.from([0x00]);
+
+  // 使用更简单的方法处理Unicode转义
+  function escapeUnicode(jsonStr: string) {
+    return jsonStr.replace(/[\u0080-\uFFFF]/g, function (match) {
+      return "\\u" + ("0000" + match.charCodeAt(0).toString(16)).slice(-4);
+    });
+  }
+
+  // 创建具有丰富格式的消息对象
+  const messageObj = {
+    text: "非游戏服务器\n",
+    extra: [
+      {
+        text: "请选择其他服务器\n",
+        bold: true,
+        color: "red",
+      },
+      {
+        text: `请求时间: ${new Date().toLocaleString()}\n`,
+        color: "gray",
+        italic: true,
+      },
+      {
+        text: `请求IP: ${socket.remoteAddress}`,
+        color: "gray",
+        italic: true,
+      },
+    ],
+  };
+
+  // 先使用JSON.stringify，然后转换Unicode
+  const jsonString = escapeUnicode(JSON.stringify(messageObj));
+
+  // 编码字符串长度
+  const messageLength = Buffer.from(varint.encode(jsonString.length));
+  const messageBuffer = Buffer.from(jsonString, "utf8");
+
+  const packet = Buffer.concat([
+    new Uint8Array(packetID),
+    new Uint8Array(messageLength),
+    new Uint8Array(messageBuffer),
+  ]);
+
+  return createPacket(packet);
 }
 
 function getServerStatus(
