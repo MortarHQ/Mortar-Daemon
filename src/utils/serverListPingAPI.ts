@@ -2,8 +2,7 @@ import net, { Socket } from "net";
 import { Buffer } from "buffer";
 import log from "@utils/logger";
 import varint from "varint";
-import fs from "fs";
-import path from "path";
+import { getServerIcon } from "@utils/image-utils";
 import { config } from "../config_loader";
 
 const SERVERLIST = "/serverlist";
@@ -123,7 +122,9 @@ function createFakeServerPacket(
     const state = clientData[addressLength.value + 2];
 
     // 读取Mortar Server List列表
-    const uri = `http://${config.server.host || 'localhost'}:${config.server.web_port}${SERVERLIST}?protocolVersion=${protocolVersion.value}`;
+    const uri = `http://${config.server.host || "localhost"}:${
+      config.server.web_port
+    }${SERVERLIST}?protocolVersion=${protocolVersion.value}`;
     const requestInit = {
       headers: {
         "X-Forwarded-For": socket.remoteAddress,
@@ -145,7 +146,6 @@ function createFakeServerPacket(
     return;
   });
 }
-
 
 function getServerStatus(
   serverAddress: string,
@@ -313,23 +313,10 @@ function readVarInt(buffer: Buffer, offset: number) {
   };
 }
 
-const cachedBase64Image: string = (() => {
-  try {
-    const imagePath = path.join(process.cwd(), "data", "server-icon.png");
-    const imageBuffer = fs.readFileSync(imagePath);
-    return `data:image/png;base64,${imageBuffer.toString("base64")}`;
-  } catch (error) {
-    log.error(`无法读取服务器图标: ${error.message}`);
-    return "";
-  }
-})();
-
 function getBase64Image() {
-  return cachedBase64Image;
+  return getServerIcon();
 }
 
 export { getBase64Image, decodePacketID, version2Protocol };
 export { Client, Server };
 export type { Version, ServerStatus };
-
-
