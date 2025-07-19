@@ -1,6 +1,6 @@
 import { Client } from "@utils/serverListPingAPI";
 import express from "express";
-import { config } from "../config_loader";
+import { config } from "../config/config_parser";
 import { ServerStatus, VERSION } from "@declare/delcare_const";
 import log from "@utils/logger";
 

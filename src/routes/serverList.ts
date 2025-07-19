@@ -1,15 +1,12 @@
+import { ServerStatus } from "@declare/delcare_const";
+
 import express from "express";
 import log from "@utils/logger";
-import {
-  ServerStatus,
-  getBase64Image,
-  version2Protocol,
-} from "@utils/serverListPingAPI";
-import { config } from "../config_loader";
-import path from "path";
+import { getBase64Image, version2Protocol } from "@utils/serverListPingAPI";
+import { config } from "../config/config_parser";
 
 function initRouter() {
-  const host = config.server.host || 'localhost';
+  const host = config.server.host || "localhost";
   const port = config.server.web_port;
   const addr = `http://${host}:${port}`;
 
@@ -95,4 +92,3 @@ function initRouter() {
 }
 
 export default initRouter;
-

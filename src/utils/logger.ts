@@ -1,6 +1,6 @@
 import pino from "pino";
 import dayjs from "dayjs";
-import { config } from "../config_loader";
+import { config } from "../config/config_parser";
 
 const pinoConfig = {
   transport: {

@@ -5,7 +5,7 @@ import morgan from "morgan";
 import initRouter from "@routes";
 import initMiddleWare from "@middleware";
 import log from "@utils/logger";
-import { config } from "./config_loader";
+import { config } from "./config/config_parser";
 
 const __filename = import.meta.filename;
 const __dirname = import.meta.dirname;

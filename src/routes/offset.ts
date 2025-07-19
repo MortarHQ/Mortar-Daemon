@@ -1,6 +1,6 @@
 import express from "express";
 import { StatusCodes } from "http-status-codes";
-import { config } from "../config_loader";
+import { config } from "../config/config_parser";
 import path from "path";
 
 function initRouter() {

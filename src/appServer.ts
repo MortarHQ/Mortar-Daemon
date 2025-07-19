@@ -1,7 +1,7 @@
 import { Server, decodePacketID } from "@utils/serverListPingAPI";
 import net from "net";
 import log from "@utils/logger";
-import { config } from "./config_loader";
+import { config } from "./config/config_parser";
 import path from "path";
 
 // 创建 TCP 服务器

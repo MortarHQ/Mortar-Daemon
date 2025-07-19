@@ -3,7 +3,7 @@ import { Buffer } from "buffer";
 import log from "@utils/logger";
 import varint from "varint";
 import { getServerIcon } from "@utils/image-utils";
-import { config } from "../config_loader";
+import { config } from "../config/config_parser";
 import {
   ServerStatus,
   VERSION,

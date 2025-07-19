@@ -8,14 +8,14 @@ import "dotenv/config";
 import app from "../app";
 import http from "http";
 import log from "@utils/logger";
-import { config } from "../config_loader";
+import { config } from "../config/config_parser";
 
 /**
  * Get port from environment and store in Express.
  */
 
 const port = normalizePort(config.server.web_port);
-const host = config.server.host || 'localhost';
+const host = config.server.host || "localhost";
 
 /**
  * Create HTTP server.
@@ -86,5 +86,3 @@ function onListening() {
   // const bind = typeof addr === "string" ? "pipe " + addr : "port " + addr.port;
   log.info(`http://${addr.address}:${addr.port}`);
 }
-
-
