@@ -5,17 +5,21 @@
  */
 
 import "dotenv/config";
-import app from "@app";
+import app from "../app";
 import http from "http";
 import log from "@utils/logger";
-import config from "config";
+import { parseIniConfig } from "../config_loader";
+import path from "path";
 
 /**
  * Get port from environment and store in Express.
  */
 
-const port = normalizePort(config.get("port"));
-const host = config.get("host");
+const configPath = path.join(process.cwd(), 'data', 'config.ini');
+const parsedConfig = parseIniConfig(configPath);
+
+const port = normalizePort(parsedConfig.server.web_port);
+const host = parsedConfig.server.host || 'localhost';
 
 /**
  * Create HTTP server.

@@ -1,19 +1,20 @@
 import express from "express";
 import { StatusCodes } from "http-status-codes";
-import config from "config";
-import { RouterName } from "@routes";
+import { parseIniConfig } from "../config_loader";
+import path from "path";
 
 function initRouter() {
   const router = express.Router();
-  const OFFSET = `/${RouterName.OFFSET}`;
 
-  const host = config.get<String>("host");
-  const port = config.get<String>("port");
+  const configPath = path.join(process.cwd(), 'data', 'config.ini');
+  const parsedConfig = parseIniConfig(configPath);
+  const host = parsedConfig.server.host || 'localhost';
+  const port = parsedConfig.server.web_port;
   const addr = `http://${host}:${port}`;
 
   const offsetCache = {};
 
-  router.put(OFFSET, (req, res, next) => {
+  router.put("/", (req, res, next) => {
     // 清空offsetCache
     Object.keys(offsetCache).forEach((key) => {
       // @ts-ignore
@@ -24,13 +25,13 @@ function initRouter() {
     res.sendStatus(StatusCodes.OK);
   });
 
-  router.get(OFFSET, (req, res, next) => {
+  router.get("/", (req, res, next) => {
     res.send(offsetCache);
   });
 
   /* 偏移测试 */
-  router.get(`${OFFSET}/testput`, (req, res, next) => {
-    fetch(`${addr}${OFFSET}`, {
+  router.get("/testput", (req, res, next) => {
+    fetch(`${addr}/offset`, {
       method: "put",
       headers: Object.assign(
         { "Content-Type": "application/json" },
@@ -50,3 +51,4 @@ function initRouter() {
 }
 
 export default initRouter;
+

@@ -2,9 +2,9 @@ import net, { Socket } from "net";
 import { Buffer } from "buffer";
 import log from "@utils/logger";
 import varint from "varint";
-import config from "config";
 import fs from "fs";
 import path from "path";
+import { parseIniConfig } from "../config_loader";
 
 const SERVERLIST = "/serverlist";
 
@@ -127,9 +127,9 @@ function createFakeServerPacket(
     const state = clientData[addressLength.value + 2];
 
     // 读取Mortar Server List列表
-    const uri = `http://${config.get("host")}:${config.get(
-      "port"
-    )}${SERVERLIST}?protocolVersion=${protocolVersion.value}`;
+    const configPath = path.join(process.cwd(), 'data', 'config.ini');
+    const parsedConfig = parseIniConfig(configPath);
+    const uri = `http://${parsedConfig.server.host || 'localhost'}:${parsedConfig.server.port}${SERVERLIST}?protocolVersion=${protocolVersion.value}`;
     const requestInit = {
       headers: {
         "X-Forwarded-For": socket.remoteAddress,
@@ -358,13 +358,19 @@ function readVarInt(buffer: Buffer, offset: number) {
   };
 }
 
+let cachedBase64Image: string | null = null;
+
 function getBase64Image() {
+  if (cachedBase64Image) {
+    return cachedBase64Image;
+  }
   try {
     // 读取图片文件
     const imagePath = path.join(process.cwd(), "data", "server-icon.png");
     const imageBuffer = fs.readFileSync(imagePath);
-    // 转换为base64并返回
-    return `data:image/png;base64,${imageBuffer.toString("base64")}`;
+    // 转换为base64并缓存
+    cachedBase64Image = `data:image/png;base64,${imageBuffer.toString("base64")}`;
+    return cachedBase64Image;
   } catch (error) {
     // 错误处理：如果无法读取文件，记录错误并返回空字符串
     log.error(`无法读取服务器图标: ${error.message}`);

@@ -3,7 +3,7 @@
 ## 简介
 
 MD是一个轻量化的伪造的MineCraft服务端应用，利用LSP协议达成对客户端的各种显示效果。  
-![server status png](public/img/ServerStatus.png)  
+![server status png](docs/img/ServerStatus.png)
 您只需要简单的修改JSON信息即可创建一个高度自定义的状态信息！
 
 ``` JSON
@@ -16,7 +16,7 @@ MD是一个轻量化的伪造的MineCraft服务端应用，利用LSP协议达成
 ```  
 
 ***修改后***：
-![server status png](public/img/ServerStatus~1.png)  
+![server status png](docs/img/ServerStatus~1.png)
 
 ## 一键安装
 

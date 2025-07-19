@@ -1,30 +1,28 @@
 import express from "express";
-import config from "config";
 import log from "@utils/logger";
 import {
   ServerStatus,
   getBase64Image,
   version2Protocol,
 } from "@utils/serverListPingAPI";
-import { RouterName } from "@routes";
+import { parseIniConfig } from "../config_loader";
+import path from "path";
 
 function initRouter() {
-  const SERVERLIST = `/${RouterName.SERVER_LIST}`;
-  const SERVER = `/${RouterName.SERVER}`;
-  const OFFSET = `/${RouterName.OFFSET}`;
-
-  const host = config.get<String>("host");
-  const port = config.get<String>("port");
+  const configPath = path.join(process.cwd(), 'data', 'config.ini');
+  const parsedConfig = parseIniConfig(configPath);
+  const host = parsedConfig.server.host || 'localhost';
+  const port = parsedConfig.server.web_port;
   const addr = `http://${host}:${port}`;
 
   const router = express.Router();
-  router.get(SERVERLIST, async (req, res, next) => {
+  router.get("/", async (req, res, next) => {
     // 检查query是否拥有protocolVersion
     let protocolVersion = parseInt(req.query.protocolVersion as string);
     if (!protocolVersion) protocolVersion = version2Protocol("1.16.5");
 
     // 获取server
-    const allServer: ServerStatus[] = await fetch(`${addr}${SERVER}`, {
+    const allServer: ServerStatus[] = await fetch(`${addr}/server`, {
       headers: req.headers as HeadersInit,
     })
       .then((res) => res.json())
@@ -79,7 +77,7 @@ function initRouter() {
       },
     ];
     // 自定义偏移
-    const serverListOffset = await fetch(`${addr}${OFFSET}/`, {
+    const serverListOffset = await fetch(`${addr}/offset/`, {
       headers: req.headers as RequestInit["headers"],
     })
       .then((data) => data.json())
@@ -99,3 +97,4 @@ function initRouter() {
 }
 
 export default initRouter;
+

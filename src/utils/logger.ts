@@ -1,6 +1,10 @@
 import pino from "pino";
 import dayjs from "dayjs";
-import config from "config";
+import { parseIniConfig } from "../config_loader";
+import path from "path";
+
+const configPath = path.join(process.cwd(), 'data', 'config.ini');
+const parsedConfig = parseIniConfig(configPath);
 
 const pinoConfig = {
   transport: {
@@ -12,7 +16,7 @@ const pinoConfig = {
   base: {
     pid: false,
   },
-  level: config.get<string>("logLevel"),
+  level: parsedConfig.server.logLevel || "info",
   timestamp: () => `,"time":"${dayjs().format()}"`,
 } as pino.LoggerOptions;
 

@@ -1,7 +1,8 @@
 import { Server, decodePacketID } from "@utils/serverListPingAPI";
 import net from "net";
-import config from "config";
 import log from "@utils/logger";
+import { parseIniConfig } from "./config_loader";
+import path from "path";
 
 // 创建 TCP 服务器
 log.info("Starting server...");
@@ -54,8 +55,10 @@ server.on("connection", (socket) => {
   });
 });
 
-// 监听 25565 端口
-const port = config.get<String>("serverPort");
+// 监听端口
+const configPath = path.join(process.cwd(), 'data', 'config.ini');
+const parsedConfig = parseIniConfig(configPath);
+const port = parsedConfig.server.port;
 server.listen(port, () => {
   log.info(`服务器已启动，正在监听 ${port} 端口...`);
 });

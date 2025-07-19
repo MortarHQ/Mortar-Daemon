@@ -1,10 +1,12 @@
-import { SERVER_LIST } from "@config/minecraft";
-import { RouterName } from "@routes";
 import { Client, ServerStatus, Version } from "@utils/serverListPingAPI";
 import express from "express";
+import { parseIniConfig } from "../config_loader";
+import path from "path";
 
 function initRouter() {
-  const SERVER = `/${RouterName.SERVER}`;
+  const configPath = path.join(process.cwd(), 'data', 'config.ini');
+  const parsedConfig = parseIniConfig(configPath);
+  const SERVER_LIST = parsedConfig.server_list;
 
   /**
    * 客户端列表请求
@@ -12,13 +14,13 @@ function initRouter() {
    */
   const clientsList: Array<() => Promise<ServerStatus>> = [];
   SERVER_LIST.forEach((server) => {
-    const client = new Client(server.host, server.port, server.version);
+    const client = new Client(server.host, server.port, server.version as Version);
     clientsList.push(client.getServerListPingWithCache());
   });
 
   const router = express.Router();
   /* GET users listing. */
-  router.get(SERVER, async function (req, res, next) {
+  router.get("/", async function (req, res, next) {
     const promises: Promise<ServerStatus>[] = [];
     /* 客户端发起请求 */
     for (let request of clientsList) {
@@ -37,3 +39,5 @@ function initRouter() {
 }
 
 export default initRouter;
+
+
