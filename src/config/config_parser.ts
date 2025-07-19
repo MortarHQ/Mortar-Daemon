@@ -5,6 +5,7 @@ interface ServerListConfig {
   host: string;
   port: string;
   version: string;
+  [key: string]: string; // 允许添加任意字符串键
 }
 
 interface MainConfig {
@@ -13,6 +14,7 @@ interface MainConfig {
   logLevel?: string;
   logFormat?: string;
   host?: string;
+  [key: string]: string | undefined; // 允许添加任意字符串键
 }
 
 export interface ParsedConfig {
@@ -26,7 +28,13 @@ function loadConfig(): ParsedConfig {
 
   const parsedData: ParsedConfig = {
     server_list: [],
-    server: { port: "25565" }, // Default port
+    server: {
+      port: "25565", // 默认端口
+      web_port: "8080", // 默认 web 端口
+      logLevel: "info", // 默认日志级别
+      logFormat: "combined", // 默认日志格式
+      host: "0.0.0.0", // 默认主机
+    },
   };
 
   // 使用正则表达式更精确地匹配各个段落
@@ -49,9 +57,8 @@ function loadConfig(): ParsedConfig {
       for (const line of lines) {
         const [key, value] = line.split("=").map((part) => part.trim());
         if (key && value) {
-          if (key === "host") serverConfig.host = value;
-          else if (key === "port") serverConfig.port = value;
-          else if (key === "version") serverConfig.version = value;
+          // 直接使用动态属性赋值
+          serverConfig[key] = value;
         }
       }
 
@@ -65,11 +72,8 @@ function loadConfig(): ParsedConfig {
       for (const line of lines) {
         const [key, value] = line.split("=").map((part) => part.trim());
         if (key && value) {
-          if (key === "port") parsedData.server.port = value;
-          else if (key === "web_port") parsedData.server.web_port = value;
-          else if (key === "logLevel") parsedData.server.logLevel = value;
-          else if (key === "logFormat") parsedData.server.logFormat = value;
-          else if (key === "host") parsedData.server.host = value;
+          // 直接使用动态属性赋值
+          parsedData.server[key] = value;
         }
       }
     }
